@@ -1,0 +1,22 @@
+{
+  "name": "%%NAME%%",
+  "version": "%%VERSION_NUM%%",
+  "description": "Library containing the definition of S-expressions and some base converters",
+  "main": "src/sexplib0.ml",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "%%PKG_REPO%%"
+  },
+  "author": "%%PKG_AUTHORS%%",
+  "license": "%%PKG_LICENSE%%",
+  "bugs": {
+    "url": "%%PKG_ISSUES%%"
+  },
+  "homepage": "%%PKG_HOMEPAGE%%",
+  "dependencies": {
+    "bs-platform": "^7.2.2"
+  }
+}
