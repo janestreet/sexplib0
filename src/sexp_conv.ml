@@ -141,11 +141,12 @@ module Exn_converter = struct
     add ?finalise (Obj.Extension_constructor.of_val exn) sexp_of_exn
 
   let find_auto exn =
-    let id = Obj.Extension_constructor.id (Obj.Extension_constructor.of_val exn) in
+    let ext_constr = Obj.Extension_constructor.of_val exn in
+    let id = Obj.Extension_constructor.id ext_constr in
     match Exn_ids.find id !exn_id_map with
     | exception Not_found -> None
     | ephe ->
-      match Ephemeron.K1.query ephe (Obj.Extension_constructor.of_val exn) with
+      match Ephemeron.K1.query ephe ext_constr with
       | None -> None
       | Some sexp_of_exn -> Some (sexp_of_exn exn)
 end
