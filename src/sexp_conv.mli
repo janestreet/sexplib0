@@ -285,9 +285,6 @@ module Exn_converter : sig
     -> (exn -> Sexp.t)
     -> unit
 
-  module For_unit_tests_only : sig
-    val size : unit -> int
-  end
 end
 
 (**/**)
