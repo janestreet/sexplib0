@@ -273,9 +273,6 @@ module Exn_converter : sig
 
       @param finalise default = [true] *)
 
-  module For_unit_tests_only : sig
-    val size : unit -> int
-  end
 end
 
 (**/**)

@@ -98,15 +98,6 @@ module Exn_converter = struct
 
   module Exn_ids = Map.Make (Int)
 
-  module Obj = struct
-    module Extension_constructor = struct
-      [@@@ocaml.warning "-3"]
-      type t = extension_constructor
-      let id = Obj.extension_id
-      let of_val = Obj.extension_constructor
-    end
-  end
-
   let exn_id_map
     : (Obj.Extension_constructor.t, exn -> Sexp.t) Ephemeron.K1.t Exn_ids.t ref =
     ref Exn_ids.empty
@@ -129,9 +120,7 @@ module Exn_converter = struct
     let id = Obj.Extension_constructor.id extension_constructor in
     let rec loop () =
       let old_exn_id_map = !exn_id_map in
-      let ephe = Ephemeron.K1.create () in
-      Ephemeron.K1.set_data ephe sexp_of_exn;
-      Ephemeron.K1.set_key ephe extension_constructor;
+      let ephe = Ephemeron.K1.make extension_constructor sexp_of_exn in
       let new_exn_id_map = Exn_ids.add old_exn_id_map ~key:id ~data:ephe in
       (* This trick avoids mutexes and should be fairly efficient *)
       if !exn_id_map != old_exn_id_map then
@@ -156,19 +145,9 @@ module Exn_converter = struct
     match Exn_ids.find id !exn_id_map with
     | exception Not_found -> None
     | ephe ->
-      match Ephemeron.K1.get_data ephe with
+      match Ephemeron.K1.query ephe (Obj.Extension_constructor.of_val exn) with
       | None -> None
       | Some sexp_of_exn -> Some (sexp_of_exn exn)
-
-
-  module For_unit_tests_only = struct
-    let size () = Exn_ids.fold !exn_id_map ~init:0 ~f:(fun ~key:_ ~data:ephe acc ->
-      match Ephemeron.K1.get_data ephe with
-      | None -> acc
-      | Some _ -> acc + 1
-    )
-  end
-
 end
 
 let sexp_of_exn_opt exn = Exn_converter.find_auto exn
@@ -426,16 +405,6 @@ let () =
         [%extension_constructor Stack.Empty],
         (function
           | Stack.Empty -> Atom "Stack.Empty"
-          | _ -> assert false)
-      );(
-        [%extension_constructor Stream.Failure],
-        (function
-          | Stream.Failure -> Atom "Stream.Failure"
-          | _ -> assert false)
-      );(
-        [%extension_constructor Stream.Error],
-        (function
-          | Stream.Error arg -> List [Atom "Stream.Error"; Atom arg ]
           | _ -> assert false)
       );(
         [%extension_constructor Sys.Break],
