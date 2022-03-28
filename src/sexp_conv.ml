@@ -90,6 +90,8 @@ module Exn_converter = struct
 
   module Exn_ids = Map.Make (Int)
 
+  module Obj = Compat.Obj
+
   module Registration = struct
     type t =
       { sexp_of_exn : exn -> Sexp.t
@@ -122,7 +124,7 @@ module Exn_converter = struct
     let id = Obj.Extension_constructor.id extension_constructor in
     let rec loop () =
       let old_exn_id_map = !exn_id_map in
-      let ephe = Ephemeron.K1.make extension_constructor ({ sexp_of_exn; printexc } : Registration.t) in
+      let ephe = Compat.make_ephemeron extension_constructor ({ sexp_of_exn; printexc } : Registration.t) in
       let new_exn_id_map = Exn_ids.add old_exn_id_map ~key:id ~data:ephe in
       (* This trick avoids mutexes and should be fairly efficient *)
       if !exn_id_map != old_exn_id_map
@@ -149,7 +151,7 @@ module Exn_converter = struct
     match Exn_ids.find id !exn_id_map with
     | exception Not_found -> None
     | ephe ->
-      (match Ephemeron.K1.query ephe ext_constr with
+      (match Compat.query_ephemeron ephe ext_constr with
        | None -> None
        | Some { sexp_of_exn; printexc } ->
          (match for_printexc, printexc with
@@ -365,9 +367,12 @@ include Sexp_conv_grammar
 let get_flc_error name (file, line, chr) = Atom (sprintf "%s %s:%d:%d" name file line chr)
 
 let () =
-  List.iter
-    ~f:(fun (extension_constructor, handler) ->
-      Exn_converter.add ~printexc:false ~finalise:false extension_constructor handler)
+  let register =
+    List.iter
+      ~f:(fun (extension_constructor, handler) ->
+        Exn_converter.add ~printexc:false ~finalise:false extension_constructor handler)
+  in
+  register
     [ ( [%extension_constructor Assert_failure]
       , function
         | Assert_failure arg -> get_flc_error "Assert_failure" arg
@@ -436,7 +441,8 @@ let () =
       , function
         | Sys.Break -> Atom "Sys.Break"
         | _ -> assert false )
-    ]
+    ];
+  register Compat.additional_constructors
 ;;
 
 let () =

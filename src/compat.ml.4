@@ -1,0 +1,35 @@
+# 2 "src/compat.ml.4"
+
+[@@@ocaml.warning "-3"]
+[@@@alert "-old_ephemeron_api"]
+
+module Obj = struct
+  module Extension_constructor = struct
+
+    type t = extension_constructor
+
+    let id = Obj.extension_id
+    let of_val = Obj.extension_constructor
+  end
+end
+
+let additional_constructors =
+  let open Sexp in
+  [ ( [%extension_constructor Stream.Failure]
+    , function
+      | Stream.Failure -> Atom "Stream.Failure"
+      | _ -> assert false )
+  ; ( [%extension_constructor Stream.Error]
+    , function
+      | Stream.Error arg -> List [ Atom "Stream.Error"; Atom arg ]
+      | _ -> assert false )
+  ]
+
+let make_ephemeron key data =
+  let ephe = Ephemeron.K1.create () in
+  Ephemeron.K1.set_data ephe data;
+  Ephemeron.K1.set_key ephe key;
+  ephe
+
+let query_ephemeron ephe _key =
+  Ephemeron.K1.get_data ephe

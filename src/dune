@@ -1,2 +1,7 @@
 (library (name sexplib0) (public_name sexplib0)
+ (modules (:standard compat) \ select_compat)
  (preprocess no_preprocessing))
+
+(rule
+  (deps compat.ml.5 compat.ml.4)
+  (action (with-stdout-to compat.ml (run ocaml %{dep:select_compat.ml}))))
