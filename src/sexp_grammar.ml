@@ -201,3 +201,7 @@ let assoc_key_tag = "sexp_grammar.assoc.key"
 (** This reserved key indicates that a sexp is a value in a key/value association. The
     tag's value is ignored. *)
 let assoc_value_tag = "sexp_grammar.assoc.value"
+
+(** When the key is set to [Atom "false"] for a variant clause, that clause should not be
+    suggested in auto-completion based on the sexp grammar. *)
+let completion_suggested = "sexp_grammar.completion-suggested"
