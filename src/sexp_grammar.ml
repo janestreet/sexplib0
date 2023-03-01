@@ -33,20 +33,12 @@ type grammar =
   | Tyvar of string
   (** Name of a type variable, e.g. [Tyvar "a"] for ['a]. Only meaningful when the body of
       the innermost enclosing [defn] defines a corresponding type variable. *)
-  | Tycon of string * grammar list
-  (** Type constructor applied to arguments. For example, [Tycon ("list", [ Integer ])]
-      represents [int list]. Only meaningful when the innermost enclosing [Recursive]
-      grammar defines a corresponding type constructor. *)
-  | Recursive of grammar * defn list
-  (** [Recursive (grammar, definitions)] allows [grammar] to refer to type constructors
-      from the mutually recursive [definitions]. The definitions may also refer to each
-      others' type constructors.
+  | Tycon of string * grammar list * defn list
+  (** Type constructor applied to arguments, and its definition.
 
-      Ordinarily, [grammar] itself is just a [Tycon] argument, although technically it can
-      be any grammar.
-
-      For example, the following definitions define a binary tree parameterized by a type
-      stored at its leaves.
+      For example, writing [Tycon ("tree", [ Integer ], defns)] represents [int tree], for
+      whatever [tree] is defined as in [defns]. The following defines [tree] as a binary
+      tree with the parameter type stored at the leaves.
 
       {[
         let defns =
@@ -57,17 +49,17 @@ type grammar =
                   { name_kind = Capitalized
                   ; clauses =
                       [ { name = "Node"
-                        ; args = Cons (Tycon ("node", [Tyvar "a"]), Empty)
+                        ; args = Cons (Recursive ("node", [Tyvar "a"]), Empty)
                         }
-                      ; { name = "Tree"
-                        ; args = Cons (Tycon ("leaf", [Tyvar "a"]), Empty)
+                      ; { name = "Leaf"
+                        ; args = Cons (Recursive ("leaf", [Tyvar "a"]), Empty)
                         }
                       ]
                   }
             }
           ; { tycon = "node"
             ; tyvars = ["a"]
-            ; grammar = List (Many (Tycon "tree", [Tyvar "a"]))
+            ; grammar = List (Many (Recursive "tree", [Tyvar "a"]))
             }
           ; { tycon = "leaf"
             ; tyvars = ["a"]
@@ -77,31 +69,32 @@ type grammar =
         ;;
       ]}
 
-      Normally, the type of a tree storing integers would be written like this:
+      To illustrate the meaning of [Tycon] with respect to [defns], and to demonstrate one
+      way to access them, it is equivalent to expand the definition of "tree" one level
+      and move the [defns] to enclosed recursive references:
 
       {[
-        Recursive (Tycon ("tree", [ Integer ]), defns)
+        Tycon ("tree", [ Integer ], defns)
+        -->
+        Variant
+          { name_kind = Capitalized
+          ; clauses =
+              [ { name = "Node"
+                ; args = Cons (Tycon ("node", [Tyvar "a"], defns), Empty)
+                }
+              ; { name = "Leaf"
+                ; args = Cons (Tycon ("leaf", [Tyvar "a"], defns), Empty)
+                }
+              ]
+          }
       ]}
 
-      It is equivalent, though needlessly verbose, to replace the [Tycon] reference with
-      the grammar of ["tree"], substituting [Integer] for [Tyvar "a"]:
-
-      {[
-        Recursive
-          ( Variant
-              { name_kind = Capitalized
-              ; clauses =
-                  [ { name = "Node"
-                    ; args = Cons (Tycon ("node", [Tyvar "a"]), Empty)
-                    }
-                  ; { name = "Tree"
-                    ; args = Cons (Tycon ("leaf", [Tyvar "a"]), Empty)
-                    }
-                  ]
-              }
-          , defns )
-      ]}
-  *)
+      This transformation exposes the structure of a grammar with recursive references,
+      while preserving the meaning of recursively-defined elements. *)
+  | Recursive of string * grammar list
+  (** Type constructor applied to arguments. Used to denote recursive type references.
+      Only meaningful when used inside the [defn]s of a [Tycon] grammar, to refer to a
+      type constructor in the nearest enclosing [defn] list. *)
   | Lazy of grammar lazy_t
   (** Lazily computed grammar. Use [Lazy] to avoid top-level side effects. To define
       recursive grammars, use [Recursive] instead. *)
