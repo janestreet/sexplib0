@@ -37,11 +37,11 @@ val sexp_of_unit : unit -> Sexp.t
     S-expression. *)
 val sexp_of_bool : bool -> Sexp.t
 
-(** [sexp_of_bool str] converts the value [str] of type [string] to an
+(** [sexp_of_string str] converts the value [str] of type [string] to an
     S-expression. *)
 val sexp_of_string : string -> Sexp.t
 
-(** [sexp_of_bool str] converts the value [str] of type [bytes] to an
+(** [sexp_of_bytes str] converts the value [str] of type [bytes] to an
     S-expression. *)
 val sexp_of_bytes : bytes -> Sexp.t
 
