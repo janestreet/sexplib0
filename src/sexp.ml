@@ -36,7 +36,14 @@ and compare a b =
     | List a, List b -> compare_list a b)
 ;;
 
-let equal a b = compare a b = 0
+let rec equal a b =
+  a == b
+  ||
+  match a, b with
+  | Atom a, Atom b -> String.equal a b
+  | Atom _, _ | _, Atom _ -> false
+  | List a, List b -> List.equal ~eq:equal a b
+;;
 
 exception Not_found_s of t
 exception Of_sexp_error of exn * t

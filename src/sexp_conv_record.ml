@@ -27,9 +27,9 @@ module Fields = struct
   let length =
     let rec length_loop : type a. a t -> int -> int =
       fun t acc ->
-        match t with
-        | Field { rest; _ } -> length_loop rest (acc + 1)
-        | Empty -> acc
+      match t with
+      | Field { rest; _ } -> length_loop rest (acc + 1)
+      | Empty -> acc
     in
     fun t -> length_loop t 0
   ;;
