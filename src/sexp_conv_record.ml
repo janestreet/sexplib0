@@ -264,13 +264,13 @@ let parse_record_fast ~fields ~index ~extra sexps =
 (* Entry points. *)
 
 let record_of_sexps
-      ~caller
-      ~context
-      ~fields
-      ~index_of_field
-      ~allow_extra_fields
-      ~create
-      sexps
+  ~caller
+  ~context
+  ~fields
+  ~index_of_field
+  ~allow_extra_fields
+  ~create
+  sexps
   =
   let allow_extra_fields =
     allow_extra_fields || not !Sexp_conv.record_check_extra_fields

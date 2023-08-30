@@ -29,12 +29,12 @@ type grammar =
   | Variant of variant (** accepts clauses keyed by a leading or sole atom *)
   | Union of grammar list (** accepts a sexp if any of the listed grammars accepts it *)
   | Tagged of grammar with_tag
-  (** annotates a grammar with a client-specific key/value pair *)
+      (** annotates a grammar with a client-specific key/value pair *)
   | Tyvar of string
-  (** Name of a type variable, e.g. [Tyvar "a"] for ['a]. Only meaningful when the body of
+      (** Name of a type variable, e.g. [Tyvar "a"] for ['a]. Only meaningful when the body of
       the innermost enclosing [defn] defines a corresponding type variable. *)
   | Tycon of string * grammar list * defn list
-  (** Type constructor applied to arguments, and its definition.
+      (** Type constructor applied to arguments, and its definition.
 
       For example, writing [Tycon ("tree", [ Integer ], defns)] represents [int tree], for
       whatever [tree] is defined as in [defns]. The following defines [tree] as a binary
@@ -92,18 +92,18 @@ type grammar =
       This transformation exposes the structure of a grammar with recursive references,
       while preserving the meaning of recursively-defined elements. *)
   | Recursive of string * grammar list
-  (** Type constructor applied to arguments. Used to denote recursive type references.
+      (** Type constructor applied to arguments. Used to denote recursive type references.
       Only meaningful when used inside the [defn]s of a [Tycon] grammar, to refer to a
       type constructor in the nearest enclosing [defn] list. *)
   | Lazy of grammar lazy_t
-  (** Lazily computed grammar. Use [Lazy] to avoid top-level side effects. To define
+      (** Lazily computed grammar. Use [Lazy] to avoid top-level side effects. To define
       recursive grammars, use [Recursive] instead. *)
 
 (** Grammar of a list of sexps. *)
 and list_grammar =
   | Empty (** accepts an empty list of sexps *)
   | Cons of grammar * list_grammar
-  (** accepts a non-empty list with head and tail matching the given grammars *)
+      (** accepts a non-empty list with head and tail matching the given grammars *)
   | Many of grammar (** accepts zero or more sexps, each matching the given grammar *)
   | Fields of record (** accepts sexps representing fields of a record *)
 
@@ -112,7 +112,7 @@ and case_sensitivity =
   | Case_insensitive (** Comparison is case insensitive. Used for custom parsers. *)
   | Case_sensitive (** Comparison is case sensitive. Used for polymorphic variants. *)
   | Case_sensitive_except_first_character
-  (** Comparison is case insensitive for the first character and case sensitive afterward.
+      (** Comparison is case insensitive for the first character and case sensitive afterward.
       Used for regular variants. *)
 
 (** Grammar of variants. Accepts any sexp matching one of the clauses. *)

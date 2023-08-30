@@ -82,12 +82,12 @@ module Printing = struct
     let n = ref 0 in
     for i = 0 to String.length s - 1 do
       n
-      := !n
-         +
-         match String.unsafe_get s i with
-         | '\"' | '\\' | '\n' | '\t' | '\r' | '\b' -> 2
-         | ' ' .. '~' -> 1
-         | _ -> 4
+        := !n
+           +
+           match String.unsafe_get s i with
+           | '\"' | '\\' | '\n' | '\t' | '\r' | '\b' -> 2
+           | ' ' .. '~' -> 1
+           | _ -> 4
     done;
     if !n = String.length s
     then s
@@ -321,8 +321,8 @@ module Printing = struct
   let to_string_hum ?indent = function
     | Atom str
       when match index_of_newline str 0 with
-        | None -> true
-        | Some _ -> false -> mach_maybe_esc_str str
+           | None -> true
+           | Some _ -> false -> mach_maybe_esc_str str
     | sexp ->
       let buf = buffer () in
       to_buffer_hum ?indent sexp ~buf;

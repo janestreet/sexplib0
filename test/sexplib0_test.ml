@@ -379,24 +379,24 @@ let%expect_test "record with polymorphic fields" =
              ; kind = Required
              ; conv =
                  (fun sexp ->
-                    { a =
-                        list_of_sexp
-                          (Sexplib.Conv_error.record_poly_field_value caller)
-                          sexp
-                    })
+                   { a =
+                       list_of_sexp
+                         (Sexplib.Conv_error.record_poly_field_value caller)
+                         sexp
+                   })
              ; rest =
                  Field
                    { name = "b"
                    ; kind = Required
                    ; conv =
                        (fun sexp ->
-                          { b =
-                              Option.t_of_sexp
-                                (Result.t_of_sexp
-                                   (Sexplib.Conv_error.record_poly_field_value caller)
-                                   (Sexplib.Conv_error.record_poly_field_value caller))
-                                sexp
-                          })
+                         { b =
+                             Option.t_of_sexp
+                               (Result.t_of_sexp
+                                  (Sexplib.Conv_error.record_poly_field_value caller)
+                                  (Sexplib.Conv_error.record_poly_field_value caller))
+                               sexp
+                         })
                    ; rest = Empty
                    }
              })

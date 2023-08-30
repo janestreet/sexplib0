@@ -90,11 +90,11 @@ module Exn_converter = struct
   end
 
   module Exn_table = Ephemeron.K1.Make (struct
-      type t = extension_constructor
+    type t = extension_constructor
 
-      let equal = ( == )
-      let hash = Obj.Extension_constructor.id
-    end)
+    let equal = ( == )
+    let hash = Obj.Extension_constructor.id
+  end)
 
   let the_exn_table : Registration.t Exn_table.t = Exn_table.create 17
 

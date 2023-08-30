@@ -63,13 +63,13 @@ let t_of_sexp =
                                                    ; kind = Required
                                                    ; conv =
                                                        (fun sexp ->
-                                                          { h =
-                                                              list_of_sexp
-                                                                (Sexplib0.Sexp_conv_error
-                                                                 .record_poly_field_value
-                                                                   "Record.t")
-                                                                sexp
-                                                          })
+                                                         { h =
+                                                             list_of_sexp
+                                                               (Sexplib0.Sexp_conv_error
+                                                                .record_poly_field_value
+                                                                  "Record.t")
+                                                               sexp
+                                                         })
                                                    ; rest = Empty
                                                    }
                                              }
