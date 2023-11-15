@@ -450,3 +450,14 @@ let%expect_test "record with polymorphic fields" =
       (invalid_sexp ()))) |}];
   ()
 ;;
+
+let%expect_test _ =
+  let big_string = String.init 5_000_000 ~f:(fun i -> String.get (Int.to_string i) 0) in
+  let sexp = [%sexp (big_string : string)] in
+  let sexp_string =
+    (* In an experimental compiler version, this would overflow the stack. *)
+    Sexp.to_string sexp
+  in
+  print_endline (Int.to_string_hum (String.length sexp_string));
+  [%expect {| 5_000_000 |}]
+;;
