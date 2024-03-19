@@ -56,7 +56,8 @@ let%expect_test "simple record" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: duplicate fields: x y"
-      (invalid_sexp ((x 1) (x 2) (y 3) (y 4))))) |}];
+      (invalid_sexp ((x 1) (x 2) (y 3) (y 4)))))
+    |}];
   (* extra fields *)
   test "((a 1) (b 2) (c 3))";
   [%expect
@@ -64,7 +65,8 @@ let%expect_test "simple record" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: extra fields: a b c"
-      (invalid_sexp ((a 1) (b 2) (c 3))))) |}];
+      (invalid_sexp ((a 1) (b 2) (c 3)))))
+    |}];
   (* missing field *)
   test "((x 1))";
   [%expect
@@ -72,7 +74,8 @@ let%expect_test "simple record" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: y"
-      (invalid_sexp ((x 1))))) |}];
+      (invalid_sexp ((x 1)))))
+    |}];
   (* other missing field *)
   test "((y 2))";
   [%expect
@@ -80,7 +83,8 @@ let%expect_test "simple record" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: x"
-      (invalid_sexp ((y 2))))) |}];
+      (invalid_sexp ((y 2)))))
+    |}];
   (* multiple missing fields *)
   test "()";
   [%expect
@@ -88,7 +92,8 @@ let%expect_test "simple record" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: x y"
-      (invalid_sexp ()))) |}];
+      (invalid_sexp ())))
+    |}];
   ()
 ;;
 
@@ -137,7 +142,8 @@ let%expect_test "record with extra fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: y"
-      (invalid_sexp ((x 1))))) |}];
+      (invalid_sexp ((x 1)))))
+    |}];
   (* other missing field *)
   test "((y 2))";
   [%expect
@@ -145,7 +151,8 @@ let%expect_test "record with extra fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: x"
-      (invalid_sexp ((y 2))))) |}];
+      (invalid_sexp ((y 2)))))
+    |}];
   (* multiple missing fields *)
   test "()";
   [%expect
@@ -153,7 +160,8 @@ let%expect_test "record with extra fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: x y"
-      (invalid_sexp ()))) |}];
+      (invalid_sexp ())))
+    |}];
   ()
 ;;
 
@@ -204,7 +212,8 @@ let%expect_test "record with defaults" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: extra fields: z"
-      (invalid_sexp ((x 1) (y 2) (z 3))))) |}];
+      (invalid_sexp ((x 1) (y 2) (z 3)))))
+    |}];
   (* missing field *)
   test "((x 1))";
   [%expect {| (Ok ((x 1) (y 0))) |}];
@@ -264,7 +273,8 @@ let%expect_test "record with omit nil" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: extra fields: z"
-      (invalid_sexp ((a (1)) (b (2 3)) (z ()))))) |}];
+      (invalid_sexp ((a (1)) (b (2 3)) (z ())))))
+    |}];
   (* missing field *)
   test "((a (1)))";
   [%expect {| (Ok ((a (1)) (b ()))) |}];
@@ -348,7 +358,8 @@ let%expect_test "record with sexp types" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: extra fields: e"
-      (invalid_sexp ((a 1) (b (2 3)) (c (4 5)) (d) (e (6 7)))))) |}];
+      (invalid_sexp ((a 1) (b (2 3)) (c (4 5)) (d) (e (6 7))))))
+    |}];
   (* all fields missing *)
   test "()";
   [%expect {| (Ok ((a ()) (b ()) (c ()) (d false))) |}];
@@ -423,7 +434,8 @@ let%expect_test "record with polymorphic fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: cannot convert values of types resulting from polymorphic record fields"
-      (invalid_sexp _))) |}];
+      (invalid_sexp _)))
+    |}];
   (* attempt to deserialize first parameter to [b] *)
   test "((a ()) (b ((Ok _))))";
   [%expect
@@ -431,7 +443,8 @@ let%expect_test "record with polymorphic fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: cannot convert values of types resulting from polymorphic record fields"
-      (invalid_sexp _))) |}];
+      (invalid_sexp _)))
+    |}];
   (* attempt to deserialize second parameter to [b] *)
   test "((a ()) (b ((Error _))))";
   [%expect
@@ -439,7 +452,8 @@ let%expect_test "record with polymorphic fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: cannot convert values of types resulting from polymorphic record fields"
-      (invalid_sexp _))) |}];
+      (invalid_sexp _)))
+    |}];
   (* multiple missing fields *)
   test "()";
   [%expect
@@ -447,7 +461,8 @@ let%expect_test "record with polymorphic fields" =
     (Error
      (Of_sexp_error
       "M.t_of_sexp: the following record elements were undefined: a b"
-      (invalid_sexp ()))) |}];
+      (invalid_sexp ())))
+    |}];
   ()
 ;;
 

@@ -63,8 +63,8 @@ module Malformed = struct
   let raise t ~caller ~context =
     match t with
     | Bool_payload -> record_sexp_bool_with_payload caller context
-    | Extras names -> record_extra_fields caller (List.rev names) context
-    | Dups names -> record_duplicate_fields caller (List.rev names) context
+    | Extras names -> record_extra_fields caller names context
+    | Dups names -> record_duplicate_fields caller names context
     | Missing names ->
       List.map names ~f:(fun name -> true, name)
       |> record_undefined_elements caller context
