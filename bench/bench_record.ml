@@ -27,40 +27,48 @@ let t_of_sexp =
          { name = "a"
          ; kind = Required
          ; conv = int_of_sexp
+         ; layout = Value
          ; rest =
              Field
                { name = "b"
                ; kind = Omit_nil
                ; conv = option_of_sexp int_of_sexp
+               ; layout = Value
                ; rest =
                    Field
                      { name = "c"
                      ; kind = Sexp_bool
                      ; conv = ()
+                     ; layout = Value
                      ; rest =
                          Field
                            { name = "d"
                            ; kind = Sexp_array
                            ; conv = int_of_sexp
+                           ; layout = Value
                            ; rest =
                                Field
                                  { name = "e"
                                  ; kind = Sexp_list
                                  ; conv = int_of_sexp
+                                 ; layout = Value
                                  ; rest =
                                      Field
                                        { name = "f"
                                        ; kind = Sexp_option
                                        ; conv = int_of_sexp
+                                       ; layout = Value
                                        ; rest =
                                            Field
                                              { name = "g"
                                              ; kind = Default (fun () -> 0)
                                              ; conv = int_of_sexp
+                                             ; layout = Value
                                              ; rest =
                                                  Field
                                                    { name = "h"
                                                    ; kind = Required
+                                                   ; layout = Value
                                                    ; conv =
                                                        (fun sexp ->
                                                          { h =

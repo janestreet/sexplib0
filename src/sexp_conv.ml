@@ -72,11 +72,6 @@ let sexp_of_fun _ = Atom "<fun>"
 (* Exception converter registration and lookup *)
 
 module Exn_converter = struct
-  (* These exception registration functions assume that context-switches
-     cannot happen unless there is an allocation.  It is reasonable to expect
-     that this will remain true for the foreseeable future.  That way we
-     avoid using mutexes and thus a dependency on the threads library. *)
-
   (* Fast and automatic exception registration *)
 
   module Registration = struct
@@ -88,11 +83,11 @@ module Exn_converter = struct
   end
 
   module Exn_table = Ephemeron.K1.Make (struct
-    type t = extension_constructor
+      type t = extension_constructor
 
-    let equal = ( == )
-    let hash = Obj.Extension_constructor.id
-  end)
+      let equal = ( == )
+      let hash = Obj.Extension_constructor.id
+    end)
 
   let the_exn_table : Registration.t Exn_table.t = Exn_table.create 17
 
@@ -407,5 +402,5 @@ let () =
     ]
 ;;
 
-external ignore : _ -> unit = "%ignore"
+external ignore : (_[@local_opt]) -> unit = "%ignore"
 external ( = ) : 'a -> 'a -> bool = "%equal"

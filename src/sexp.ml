@@ -82,12 +82,12 @@ module Printing = struct
     let n = ref 0 in
     for i = 0 to String.length s - 1 do
       n
-        := !n
-           +
-           match String.unsafe_get s i with
-           | '\"' | '\\' | '\n' | '\t' | '\r' | '\b' -> 2
-           | ' ' .. '~' -> 1
-           | _ -> 4
+      := !n
+         +
+         match String.unsafe_get s i with
+         | '\"' | '\\' | '\n' | '\t' | '\r' | '\b' -> 2
+         | ' ' .. '~' -> 1
+         | _ -> 4
     done;
     if !n = String.length s
     then s

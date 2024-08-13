@@ -39,12 +39,25 @@ let stag_incorrect_n_args loc tag sexp =
 let stag_takes_args = simple_error "this constructor requires arguments"
 let nested_list_invalid_sum = simple_error "expected a variant type, saw a nested list"
 let empty_list_invalid_sum = simple_error "expected a variant type, saw an empty list"
-let unexpected_stag = simple_error "unexpected variant constructor"
+
+let unexpected_stag loc expected_cnstrs sexp =
+  let max_cnstrs = 10 in
+  let expected_cnstrs =
+    if List.length expected_cnstrs <= max_cnstrs
+    then expected_cnstrs
+    else List.filteri expected_cnstrs ~f:(fun i _ -> i < max_cnstrs) @ [ "..." ]
+  in
+  let expected_cnstrs_string = String.concat expected_cnstrs ~sep:" " in
+  error
+    ~loc
+    ~sexp
+    (sprintf "unexpected variant constructor; expected one of %s" expected_cnstrs_string)
+;;
 
 (* Errors concerning records *)
 
 let record_sexp_bool_with_payload =
-  simple_error "record conversion: a [sexp.bool] field was given a payload."
+  simple_error "record conversion: a [sexp.bool] field was given a payload"
 ;;
 
 let record_only_pairs_expected =
@@ -61,23 +74,25 @@ let record_duplicate_fields loc fld_names sexp =
   record_invalid_fields ~what:"duplicate fields" ~loc fld_names sexp
 ;;
 
-let record_extra_fields loc fld_names sexp =
-  record_invalid_fields ~what:"extra fields" ~loc fld_names sexp
+let record_missing_and_extra_fields loc sexp ~missing ~extras =
+  match missing, extras with
+  | [], [] -> assert false
+  | _ :: _, [] -> record_invalid_fields ~what:"missing fields" ~loc missing sexp
+  | [], _ :: _ -> record_invalid_fields ~what:"extra fields" ~loc extras sexp
+  | _ :: _, _ :: _ ->
+    let missing_fields = String.concat ~sep:" " missing in
+    let extra_fields = String.concat ~sep:" " extras in
+    error
+      ~loc
+      ~sexp
+      (sprintf
+         "extra fields found while some fields missing; extra fields: %s; missing \
+          fields: %s"
+         extra_fields
+         missing_fields)
 ;;
 
-let rec record_get_undefined_loop fields = function
-  | [] -> String.concat (List.rev fields) ~sep:" "
-  | (true, field) :: rest -> record_get_undefined_loop (field :: fields) rest
-  | _ :: rest -> record_get_undefined_loop fields rest
-;;
-
-let record_undefined_elements loc sexp lst =
-  let undefined = record_get_undefined_loop [] lst in
-  let msg = sprintf "the following record elements were undefined: %s" undefined in
-  error ~loc ~sexp msg
-;;
-
-let record_list_instead_atom = simple_error "list instead of atom for record expected"
+let record_list_instead_atom = simple_error "list expected for record, found atom instead"
 
 let record_poly_field_value =
   simple_error "cannot convert values of types resulting from polymorphic record fields"

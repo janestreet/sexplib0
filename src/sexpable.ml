@@ -36,3 +36,31 @@ module type S3 = sig
     -> ('a, 'b, 'c) t
     -> Sexp.t
 end
+
+module type S_with_grammar = sig
+  include S
+
+  val t_sexp_grammar : t Sexp_grammar.t
+end
+
+module type S1_with_grammar = sig
+  include S1
+
+  val t_sexp_grammar : 'a Sexp_grammar.t -> 'a t Sexp_grammar.t
+end
+
+module type S2_with_grammar = sig
+  include S2
+
+  val t_sexp_grammar : 'a Sexp_grammar.t -> 'b Sexp_grammar.t -> ('a, 'b) t Sexp_grammar.t
+end
+
+module type S3_with_grammar = sig
+  include S3
+
+  val t_sexp_grammar
+    :  'a Sexp_grammar.t
+    -> 'b Sexp_grammar.t
+    -> 'c Sexp_grammar.t
+    -> ('a, 'b, 'c) t Sexp_grammar.t
+end

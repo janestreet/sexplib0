@@ -11,13 +11,29 @@ module Kind : sig
     | Sexp_option : ('a option, Sexp.t -> 'a) t
 end
 
+(** Non-value fields must be stored as a closure [unit -> 'a] instead of as
+    ['a] directly. This is because we can't store non-value things in arbitrary
+    records. This closure involves some additional overhead not present
+    in value fields.
+
+   Users use [@sexp.non_value] to mark a field as a non-value. This carries
+   the extra overhead explained above.
+*)
+module Layout_witness : sig
+  type _ t =
+    | Value : _ t
+    | Any : 'a. (unit -> 'a) t
+end
+
 module Fields : sig
   (** A GADT specifying record fields. *)
+
   type _ t =
     | Empty : unit t
     | Field :
         { name : string
         ; kind : ('a, 'conv) Kind.t
+        ; layout : 'a Layout_witness.t
         ; conv : 'conv
         ; rest : 'b t
         }

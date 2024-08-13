@@ -285,5 +285,5 @@ end
 (**/**)
 
 (*_ For the syntax extension *)
-external ignore : _ -> unit = "%ignore"
+external ignore : (_[@local_opt]) -> unit = "%ignore"
 external ( = ) : 'a -> 'a -> bool = "%equal"

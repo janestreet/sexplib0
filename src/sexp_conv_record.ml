@@ -13,12 +13,19 @@ module Kind = struct
     | Sexp_option : ('a option, Sexp.t -> 'a) t
 end
 
+module Layout_witness = struct
+  type _ t =
+    | Value : _ t
+    | Any : 'a. (unit -> 'a) t
+end
+
 module Fields = struct
   type _ t =
     | Empty : unit t
     | Field :
         { name : string
         ; kind : ('a, 'conv) Kind.t
+        ; layout : 'a Layout_witness.t
         ; conv : 'conv
         ; rest : 'b t
         }
@@ -41,10 +48,15 @@ module Malformed = struct
      missing fields. *)
   type t =
     | Bool_payload
-    | Extras of string list
+    | Missing_and_extras of
+        { missing : string list
+        ; extras : string list
+        }
     | Dups of string list
-    | Missing of string list
     | Non_pair of Sexp.t option
+
+  let missing missing = Missing_and_extras { missing; extras = [] }
+  let extras extras = Missing_and_extras { missing = []; extras }
 
   let combine a b =
     match a, b with
@@ -52,22 +64,20 @@ module Malformed = struct
     | ((Bool_payload | Non_pair _) as t), _ -> t
     | _, ((Bool_payload | Non_pair _) as t) -> t
     (* combine lists of similar errors *)
-    | Extras a, Extras b -> Extras (a @ b)
+    | ( Missing_and_extras { missing = missing_a; extras = extras_a }
+      , Missing_and_extras { missing = missing_b; extras = extras_b } ) ->
+      Missing_and_extras { missing = missing_a @ missing_b; extras = extras_a @ extras_b }
     | Dups a, Dups b -> Dups (a @ b)
-    | Missing a, Missing b -> Missing (a @ b)
     (* otherwise, dups > extras > missing *)
     | (Dups _ as t), _ | _, (Dups _ as t) -> t
-    | (Extras _ as t), _ | _, (Extras _ as t) -> t
   ;;
 
   let raise t ~caller ~context =
     match t with
     | Bool_payload -> record_sexp_bool_with_payload caller context
-    | Extras names -> record_extra_fields caller names context
+    | Missing_and_extras { missing; extras } ->
+      record_missing_and_extra_fields caller ~missing ~extras context
     | Dups names -> record_duplicate_fields caller names context
-    | Missing names ->
-      List.map names ~f:(fun name -> true, name)
-      |> record_undefined_elements caller context
     | Non_pair maybe_context ->
       let context = Option.value maybe_context ~default:context in
       record_only_pairs_expected caller context
@@ -106,7 +116,7 @@ let rec parse_value_malformed
 
 and parse_value : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int -> a * b =
   fun ~fields ~state ~pos ->
-  let (Field { name; kind; conv; rest }) = fields in
+  let (Field { name; kind; conv; rest; layout = _ }) = fields in
   let value : a =
     match kind, State.unsafe_get state pos with
     (* well-formed *)
@@ -126,7 +136,8 @@ and parse_value : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int 
     | Sexp_bool, List ([] | _ :: _ :: _) ->
       parse_value_malformed Bool_payload ~fields ~state ~pos
     (* absent *)
-    | Required, Atom _ -> parse_value_malformed (Missing [ name ]) ~fields ~state ~pos
+    | Required, Atom _ ->
+      parse_value_malformed (Malformed.missing [ name ]) ~fields ~state ~pos
     | Default default, Atom _ -> default ()
     | Omit_nil, Atom _ -> conv (List [])
     | Sexp_option, Atom _ -> None
@@ -181,7 +192,14 @@ and parse_spine_slow ~index ~extra ~seen ~state ~len sexps =
           (match extra with
            | true -> parse_spine_slow ~index ~extra ~seen ~state ~len sexps
            | false ->
-             parse_spine_malformed (Extras [ name ]) ~index ~extra ~seen ~state ~len sexps)))
+             parse_spine_malformed
+               (Malformed.extras [ name ])
+               ~index
+               ~extra
+               ~seen
+               ~state
+               ~len
+               sexps)))
   | sexp :: sexps ->
     parse_spine_malformed (Non_pair (Some sexp)) ~index ~extra ~seen ~state ~len sexps
 ;;
@@ -193,9 +211,22 @@ let parse_record_slow ~fields ~index ~extra ~seen sexps =
   let state = State.create unseen in
   let len = seen + unseen in
   (* populate state *)
-  parse_spine_slow ~index ~extra ~seen ~state ~len sexps;
+  let maybe_malformed =
+    match parse_spine_slow ~index ~extra ~seen ~state ~len sexps with
+    | exception Malformed malformed -> Some malformed
+    | () -> None
+  in
   (* parse values from state *)
-  parse_values ~fields ~state ~pos:0
+  let parsed_or_malformed =
+    match parse_values ~fields ~state ~pos:0 with
+    | values -> Ok values
+    | exception Malformed malformed -> Error malformed
+  in
+  match maybe_malformed, parsed_or_malformed with
+  | None, Ok values -> values
+  | Some malformed, Ok _ | None, Error malformed -> raise (Malformed malformed)
+  | Some malformed1, Error malformed2 ->
+    raise (Malformed (Malformed.combine malformed1 malformed2))
 ;;
 
 (* Fast path for record parsing. Directly parses and returns fields in the order they are
@@ -211,7 +242,7 @@ let rec parse_field_fast
     -> a * b
   =
   fun ~fields ~index ~extra ~seen sexps ->
-  let (Field { name; kind; conv; rest }) = fields in
+  let (Field { name; kind; conv; rest; layout = _ }) = fields in
   match sexps with
   | List (Atom atom :: args) :: others when String.equal atom name ->
     (match kind, args with
