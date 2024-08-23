@@ -22,7 +22,7 @@ end
 module Layout_witness : sig
   type _ t =
     | Value : _ t
-    | Any : 'a. (unit -> 'a) t
+    | Any : ('a : any). (unit -> 'a) t
 end
 
 module Fields : sig
