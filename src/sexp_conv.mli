@@ -109,6 +109,10 @@ val sexp_of_list : ('a -> Sexp.t) -> 'a list -> Sexp.t
     ['a] to an S-expression. *)
 val sexp_of_array : ('a -> Sexp.t) -> 'a array -> Sexp.t
 
+(** [sexp_of_floatarray ar] converts a value of type [floatarray] to
+    an S-expression. *)
+val sexp_of_floatarray : floatarray -> Sexp.t
+
 (** [sexp_of_hashtbl conv_key conv_value htbl] converts the value [htbl]
     of type [('a, 'b) Hashtbl.t] to an S-expression.  Uses [conv_key]
     to convert the hashtable keys of type ['a], and [conv_value] to
@@ -222,6 +226,10 @@ val list_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a list
     of type ['a array] using conversion function [conv], which converts
     an S-expression to a value of type ['a]. *)
 val array_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a array
+
+(** [floatarray_of_sexp sexp] converts S-expression [sexp] to a value of type
+    [floatarray]. *)
+val floatarray_of_sexp : Sexp.t -> floatarray
 
 (** [hashtbl_of_sexp conv_key conv_value sexp] converts S-expression
     [sexp] to a value of type [('a, 'b) Hashtbl.t] using conversion

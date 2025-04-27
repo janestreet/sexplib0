@@ -36,6 +36,10 @@ let array_sexp_grammar ({ untyped } : _ Sexp_grammar.t) : _ array Sexp_grammar.t
   { untyped = List (Many untyped) }
 ;;
 
+let floatarray_sexp_grammar : floatarray Sexp_grammar.t =
+  { untyped = List (Many Float) }
+;;
+
 let empty_sexp_grammar : _ Sexp_grammar.t = { untyped = Union [] }
 let opaque_sexp_grammar = empty_sexp_grammar
 let fun_sexp_grammar = empty_sexp_grammar

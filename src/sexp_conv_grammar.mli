@@ -28,5 +28,6 @@ val lazy_t_sexp_grammar : 'a Sexp_grammar.t -> 'a lazy_t Sexp_grammar.t
 val option_sexp_grammar : 'a Sexp_grammar.t -> 'a option Sexp_grammar.t
 val list_sexp_grammar : 'a Sexp_grammar.t -> 'a list Sexp_grammar.t
 val array_sexp_grammar : 'a Sexp_grammar.t -> 'a array Sexp_grammar.t
+val floatarray_sexp_grammar : floatarray Sexp_grammar.t
 val opaque_sexp_grammar : 'a Sexp_grammar.t
 val fun_sexp_grammar : 'a Sexp_grammar.t
