@@ -1,3 +1,7 @@
+@@ portable
+
+open Basement
+
 (** Type of S-expressions *)
 
 type t =
@@ -8,6 +12,7 @@ type t =
   creating a circular dependency *)
 val t_of_sexp : t -> t
 val sexp_of_t : t -> t
+val sexp_of_t__local : local_ t -> local_ t
 val equal : t -> t -> bool
 val compare : t -> t -> int
 
@@ -22,7 +27,8 @@ exception Of_sexp_error of exn * t
 
 (** {1 Helpers} *)
 
-(** Helper to build nice s-expressions for error messages.  It imitates the behavior of
+(** {v
+ Helper to build nice s-expressions for error messages.  It imitates the behavior of
     [[%message ...]] from the ppx_sexp_message rewriter.
 
     [message name key_values] produces a s-expression list starting with atom [name] and
@@ -42,7 +48,8 @@ exception Of_sexp_error of exn * t
 
     {[
       (error (x 42) Exit)
-    ]} *)
+    ]}
+    v} *)
 val message : string -> (string * t) list -> t
 
 (** {1 Defaults} *)
@@ -51,7 +58,7 @@ val message : string -> (string * t) list -> t
     conversions.
 
     Initialisation value: 2. *)
-val default_indent : int ref
+val default_indent : int Dynamic.t
 
 (** {1 Pretty printing of S-expressions} *)
 
@@ -72,14 +79,14 @@ val pp : Format.formatter -> t -> unit
 
 (** {1 Conversion to strings} *)
 
-(** [to_string_hum ?indent sexp] converts S-expression [sexp] to a
-    string in human readable form with indentation level [indent].
+(** [to_string_hum ?indent sexp] converts S-expression [sexp] to a string in human
+    readable form with indentation level [indent].
 
     @param indent default = [!default_indent] *)
 val to_string_hum : ?indent:int -> t -> string
 
-(** [to_string_mach sexp] converts S-expression [sexp] to a string in
-    machine readable (i.e. most compact) form. *)
+(** [to_string_mach sexp] converts S-expression [sexp] to a string in machine readable
+    (i.e. most compact) form. *)
 val to_string_mach : t -> string
 
 (** Same as [to_string_mach]. *)
@@ -87,8 +94,8 @@ val to_string : t -> string
 
 (** {1 Styles} *)
 
-val of_float_style : [ `Underscores | `No_underscores ] ref
-val of_int_style : [ `Underscores | `No_underscores ] ref
+val of_float_style : [ `Underscores | `No_underscores ] Dynamic.t
+val of_int_style : [ `Underscores | `No_underscores ] Dynamic.t
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 

@@ -1,3 +1,5 @@
+@@ portable
+
 (** Grammar constructors. *)
 
 val sexp_grammar_with_tags

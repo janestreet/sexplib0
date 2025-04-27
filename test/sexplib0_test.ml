@@ -17,8 +17,7 @@ let test (type a) (module M : S with type t = a) string =
 (** All possible ways of constructing [Sexp_conv_record.Layout_witness.t] values, together
     with a uniform interface for manipulating them. The tests below use this uniform
     interface to write tests that try all possible combinations of layouts (i.e., both
-    [Any] and [Value]).
-*)
+    [Any] and [Value]). *)
 module Layout_impl = struct
   type (_, _) t =
     | Value : ('a, 'a) t

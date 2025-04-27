@@ -1,6 +1,7 @@
 open! StdLabels
-open! Sexp_conv
-open! Sexp_conv_error
+open Basement
+open Sexp_conv
+open Sexp_conv_error
 
 module Kind = struct
   type (_, _) t =
@@ -96,8 +97,7 @@ module State = struct
 
   let unsafe_get t pos = Array.unsafe_get t.state pos
   let unsafe_set t pos sexp = Array.unsafe_set t.state pos sexp
-  let absent = Sexp.Atom ""
-  let create len = { state = Array.make len absent }
+  let create len = { state = Array.make len (Sexp.Atom "") }
 end
 
 (* Parsing field values from state. *)
@@ -304,7 +304,7 @@ let record_of_sexps
   sexps
   =
   let allow_extra_fields =
-    allow_extra_fields || not !Sexp_conv.record_check_extra_fields
+    allow_extra_fields || not (Dynamic.get Sexp_conv.record_check_extra_fields)
   in
   match
     parse_record_fast ~fields ~index:index_of_field ~extra:allow_extra_fields sexps

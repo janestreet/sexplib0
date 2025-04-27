@@ -1,10 +1,9 @@
-[@@@ocaml.warning "-3"]
-
 (* blit_string doesn't exist in [StdLabels.Bytes]...  *)
 let bytes_blit_string ~src ~src_pos ~dst ~dst_pos ~len =
   Bytes.blit_string src src_pos dst dst_pos len
 ;;
 
+open Basement
 open StdLabels
 open Format
 
@@ -14,6 +13,7 @@ type t =
   | List of t list
 
 let sexp_of_t t = t
+let sexp_of_t__local t = t
 let t_of_sexp t = t
 
 let rec compare_list a b =
@@ -51,7 +51,7 @@ exception Of_sexp_error of exn * t
 module Printing = struct
   (* Default indentation level for human-readable conversions *)
 
-  let default_indent = ref 1
+  let default_indent = Dynamic.make 1
 
   (* Escaping of strings used as atoms in S-expressions *)
 
@@ -230,7 +230,7 @@ module Printing = struct
     | [] -> pp_print_string ppf ")"
   ;;
 
-  let pp_hum ppf sexp = pp_hum_indent !default_indent ppf sexp
+  let pp_hum ppf sexp = pp_hum_indent (Dynamic.get default_indent) ppf sexp
   let pp_mach ppf sexp = ignore (pp_mach_internal false ppf sexp)
   let pp = pp_mach
 
@@ -245,7 +245,7 @@ module Printing = struct
 
   (* Buffer conversions *)
 
-  let to_buffer_hum ~buf ?(indent = !default_indent) sexp =
+  let to_buffer_hum ~buf ?(indent = Dynamic.get default_indent) sexp =
     let ppf = Format.formatter_of_buffer buf in
     Format.fprintf ppf "%a@?" (pp_hum_indent indent) sexp
   ;;
@@ -342,8 +342,8 @@ end
 
 include Printing
 
-let of_float_style : [ `Underscores | `No_underscores ] ref = ref `No_underscores
-let of_int_style : [ `Underscores | `No_underscores ] ref = ref `No_underscores
+let of_float_style = Dynamic.make (`No_underscores : [ `Underscores | `No_underscores ])
+let of_int_style = Dynamic.make (`No_underscores : [ `Underscores | `No_underscores ])
 
 module Private = struct
   include Printing

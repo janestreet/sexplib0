@@ -1,3 +1,5 @@
+@@ portable
+
 (* Parses sexps for labeled tuples, a language feature currently only implemented in Jane
    Street's experimental branch of the compiler
    (https://github.com/ocaml-flambda/flambda-backend/). *)
