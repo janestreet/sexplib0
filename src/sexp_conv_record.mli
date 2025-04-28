@@ -11,14 +11,12 @@ module Kind : sig
     | Sexp_option : ('a option, Sexp.t -> 'a) t
 end
 
-(** Non-value fields must be stored as a closure [unit -> 'a] instead of as
-    ['a] directly. This is because we can't store non-value things in arbitrary
-    records. This closure involves some additional overhead not present
-    in value fields.
+(** Non-value fields must be stored as a closure [unit -> 'a] instead of as ['a] directly.
+    This is because we can't store non-value things in arbitrary records. This closure
+    involves some additional overhead not present in value fields.
 
-   Users use [@sexp.non_value] to mark a field as a non-value. This carries
-   the extra overhead explained above.
-*)
+    Users use [@sexp.non_value] to mark a field as a non-value. This carries the extra
+    overhead explained above. *)
 module Layout_witness : sig
   type _ t =
     | Value : _ t
@@ -45,8 +43,7 @@ end
     Uses [caller] as the source for error messages. Parses using the given [field]s. Uses
     [index_of_field] to look up field names found in sexps. If [allow_extra_fields] is
     true, extra fields are allowed and discarded without error. [create] is used to
-    construct the final returned value.
-*)
+    construct the final returned value. *)
 val record_of_sexp
   :  caller:string
   -> fields:'a Fields.t

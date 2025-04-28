@@ -43,28 +43,25 @@ type grammar =
       {[
         let defns =
           [ { tycon = "tree"
-            ; tyvars = ["a"]
+            ; tyvars = [ "a" ]
             ; grammar =
                 Variant
                   { name_kind = Capitalized
                   ; clauses =
                       [ { name = "Node"
-                        ; args = Cons (Recursive ("node", [Tyvar "a"]), Empty)
+                        ; args = Cons (Recursive ("node", [ Tyvar "a" ]), Empty)
                         }
                       ; { name = "Leaf"
-                        ; args = Cons (Recursive ("leaf", [Tyvar "a"]), Empty)
+                        ; args = Cons (Recursive ("leaf", [ Tyvar "a" ]), Empty)
                         }
                       ]
                   }
             }
           ; { tycon = "node"
-            ; tyvars = ["a"]
-            ; grammar = List (Many (Recursive "tree", [Tyvar "a"]))
+            ; tyvars = [ "a" ]
+            ; grammar = List (Many (Recursive "tree", [ Tyvar "a" ]))
             }
-          ; { tycon = "leaf"
-            ; tyvars = ["a"]
-            ; grammar = [Tyvar "a"]
-            }
+          ; { tycon = "leaf"; tyvars = [ "a" ]; grammar = [ Tyvar "a" ] }
           ]
         ;;
       ]}
@@ -75,18 +72,17 @@ type grammar =
 
       {[
         Tycon ("tree", [ Integer ], defns)
-        -->
-        Variant
-          { name_kind = Capitalized
-          ; clauses =
-              [ { name = "Node"
-                ; args = Cons (Tycon ("node", [Tyvar "a"], defns), Empty)
-                }
-              ; { name = "Leaf"
-                ; args = Cons (Tycon ("leaf", [Tyvar "a"], defns), Empty)
-                }
-              ]
-          }
+        --> Variant
+              { name_kind = Capitalized
+              ; clauses =
+                  [ { name = "Node"
+                    ; args = Cons (Tycon ("node", [ Tyvar "a" ], defns), Empty)
+                    }
+                  ; { name = "Leaf"
+                    ; args = Cons (Tycon ("leaf", [ Tyvar "a" ], defns), Empty)
+                    }
+                  ]
+              }
       ]}
 
       This transformation exposes the structure of a grammar with recursive references,
@@ -95,9 +91,10 @@ type grammar =
   (** Type constructor applied to arguments. Used to denote recursive type references.
       Only meaningful when used inside the [defn]s of a [Tycon] grammar, to refer to a
       type constructor in the nearest enclosing [defn] list. *)
-  | Lazy of grammar lazy_t
+  | Lazy of grammar Basement.Portable_lazy.t
   (** Lazily computed grammar. Use [Lazy] to avoid top-level side effects. To define
       recursive grammars, use [Recursive] instead. *)
+[@@unsafe_allow_any_mode_crossing]
 
 (** Grammar of a list of sexps. *)
 and list_grammar =
@@ -120,6 +117,7 @@ and variant =
   { case_sensitivity : case_sensitivity
   ; clauses : clause with_tag_list list
   }
+[@@unsafe_allow_any_mode_crossing]
 
 (** Grammar of a single variant clause. Accepts sexps based on the [clause_kind]. *)
 and clause =

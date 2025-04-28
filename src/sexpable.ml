@@ -5,10 +5,22 @@ module type S_any = sig
   val sexp_of_t : t -> Sexp.t
 end
 
+module type S_any__local = sig
+  include S_any
+
+  val sexp_of_t__local : t -> Sexp.t
+end
+
 module type S = sig
   type t
 
   include S_any with type t := t
+end
+
+module type S__local = sig
+  type t
+
+  include S_any__local with type t := t
 end
 
 module type S_any1 = sig
@@ -18,10 +30,22 @@ module type S_any1 = sig
   val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t
 end
 
+module type S_any1__local = sig
+  include S_any1
+
+  val sexp_of_t__local : ('a -> Sexp.t) -> 'a t -> Sexp.t
+end
+
 module type S1 = sig
   type 'a t
 
   include S_any1 with type 'a t := 'a t
+end
+
+module type S1__local = sig
+  type 'a t
+
+  include S_any1__local with type 'a t := 'a t
 end
 
 module type S_any2 = sig
@@ -31,10 +55,22 @@ module type S_any2 = sig
   val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
 end
 
+module type S_any2__local = sig
+  include S_any2
+
+  val sexp_of_t__local : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
+end
+
 module type S2 = sig
   type ('a, 'b) t
 
   include S_any2 with type ('a, 'b) t := ('a, 'b) t
+end
+
+module type S2__local = sig
+  type ('a, 'b) t
+
+  include S_any2__local with type ('a, 'b) t := ('a, 'b) t
 end
 
 module type S_any3 = sig
@@ -55,10 +91,27 @@ module type S_any3 = sig
     -> Sexp.t
 end
 
+module type S_any3__local = sig
+  include S_any3
+
+  val sexp_of_t__local
+    :  ('a -> Sexp.t)
+    -> ('b -> Sexp.t)
+    -> ('c -> Sexp.t)
+    -> ('a, 'b, 'c) t
+    -> Sexp.t
+end
+
 module type S3 = sig
   type ('a, 'b, 'c) t
 
   include S_any3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+end
+
+module type S3__local = sig
+  type ('a, 'b, 'c) t
+
+  include S_any3__local with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
 end
 
 module type S_with_grammar = sig
