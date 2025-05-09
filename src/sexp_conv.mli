@@ -121,6 +121,13 @@ val sexp_of_option : ('a -> Sexp.t) -> 'a option -> Sexp.t
 (** As [sexp_of_option], but returning a locally-allocated sexp. *)
 val sexp_of_option__local : ('a -> Sexp.t) -> 'a option -> Sexp.t
 
+(** [sexp_of_or_null conv orn] converts the value [orn] of type ['a or_null] to an
+    S-expression. Uses [conv] to convert values of type ['a] to an S-expression. *)
+val sexp_of_or_null : ('a -> Sexp.t) -> 'a Or_null_shim.t -> Sexp.t
+
+(** As [sexp_of_or_null], but returning a locally-allocated sexp. *)
+val sexp_of_or_null__local : ('a -> Sexp.t) -> 'a Or_null_shim.t -> Sexp.t
+
 (** [sexp_of_pair conv1 conv2 pair] converts a pair to an S-expression. It uses its first
     argument to convert the first element of the pair, and its second argument to convert
     the second element of the pair. *)
@@ -225,6 +232,11 @@ val lazy_t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a lazy_t
     using conversion function [conv], which converts an S-expression to a value of type
     ['a]. *)
 val option_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a option
+
+(** [option_of_sexp conv sexp] converts S-expression [sexp] to a value of type
+    ['a or_null] using conversion function [conv], which converts an S-expression to a
+    value of type ['a]. *)
+val or_null_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a Or_null_shim.t
 
 (** [pair_of_sexp conv1 conv2 sexp] converts S-expression [sexp] to a pair of type
     ['a * 'b] using conversion functions [conv1] and [conv2], which convert S-expressions
