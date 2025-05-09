@@ -581,3 +581,29 @@ module _ = struct
   let (T : ((module Sexpable.S2_with_grammar), (module S2_with_grammar)) Type_equal.t) = T
   let (T : ((module Sexpable.S3_with_grammar), (module S3_with_grammar)) Type_equal.t) = T
 end
+
+module%test Illegal_chars = struct
+  (* Test [sexp_of_char] against the naive implementation that dynamically creates the
+     length-1 string. The focus of this test is on illegal representations: immediates
+     that lie outside the range representable by [char] *)
+
+  let[@inline never] sexp_of_char' (char : char) : Sexp.t =
+    Atom ((String.make [@inlined never]) 1 char)
+  ;;
+
+  let test_at ~start ~num_tests =
+    List.init num_tests ~f:(( + ) start)
+    |> List.iter ~f:(fun (c : int) ->
+      let c : char = Stdlib.Obj.magic c in
+      Expect_test_helpers_base.require_equal
+        (module Sexp)
+        (sexp_of_char c)
+        (sexp_of_char' c))
+  ;;
+
+  let%expect_test _ =
+    test_at ~start:Int.min_value ~num_tests:0x10000;
+    test_at ~start:(-0x10000) ~num_tests:0x20000;
+    test_at ~start:(Int.max_value - 0xFFFF) ~num_tests:0x10000
+  ;;
+end

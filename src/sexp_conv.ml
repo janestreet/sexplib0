@@ -116,14 +116,17 @@ let list_map__local f lst = exclave_
 
 let sexp_of_unit () = List []
 let sexp_of_unit__local () = exclave_ List []
-let sexp_of_bool b = Atom (string_of_bool b)
-let sexp_of_bool__local b = exclave_ Atom (string_of_bool b)
+
+let[@zero_alloc] sexp_of_bool = function
+  | false -> Atom "false"
+  | true -> Atom "true"
+;;
+
+let sexp_of_bool__local = sexp_of_bool
 let sexp_of_string str = Atom str
 let sexp_of_string__local str = exclave_ Atom str
 let sexp_of_bytes bytes = Atom (Bytes.to_string bytes)
 let sexp_of_bytes__local bytes = exclave_ Atom (bytes_to_string_local bytes)
-let sexp_of_char c = Atom (String.make 1 c)
-let sexp_of_char__local c = exclave_ Atom (string_make_local 1 c)
 let sexp_of_int n = Atom (string_of_int n)
 let sexp_of_int__local n = exclave_ Atom (string_of_int n)
 let sexp_of_float n = Atom ((Dynamic.get default_string_of_float) n)
@@ -159,6 +162,24 @@ let sexp_of_option__local sexp_of__a option =
   | Some x -> exclave_ List [ Atom "some"; sexp_of__a x ]
   | None when write_old_option_format -> exclave_ List []
   | None -> exclave_ Atom "none"
+;;
+
+let sexp_of_or_null sexp_of__a or_null =
+  let write_old_option_format = Dynamic.get write_old_option_format in
+  match or_null with
+  | Or_null_shim.This x when write_old_option_format -> List [ sexp_of__a x ]
+  | Or_null_shim.This x -> List [ Atom "this"; sexp_of__a x ]
+  | Null when write_old_option_format -> List []
+  | Null -> Atom "null"
+;;
+
+let sexp_of_or_null__local sexp_of__a or_null =
+  let write_old_option_format = Dynamic.get write_old_option_format in
+  match or_null with
+  | Or_null_shim.This x when write_old_option_format -> exclave_ List [ sexp_of__a x ]
+  | Or_null_shim.This x -> exclave_ List [ Atom "this"; sexp_of__a x ]
+  | Null when write_old_option_format -> exclave_ List []
+  | Null -> exclave_ Atom "null"
 ;;
 
 let sexp_of_pair sexp_of__a sexp_of__b (a, b) = List [ sexp_of__a a; sexp_of__b b ]
@@ -414,6 +435,22 @@ let option_of_sexp a__of_sexp sexp =
     | List _ -> of_sexp_error "option_of_sexp: list must be (some el)" sexp)
 ;;
 
+let or_null_of_sexp a__of_sexp sexp =
+  if Dynamic.get read_old_option_format
+  then (
+    match sexp with
+    | List [] | Atom ("null" | "Null") -> Or_null_shim.Null
+    | List [ el ] | List [ Atom ("this" | "This"); el ] -> This (a__of_sexp el)
+    | List _ -> of_sexp_error "or_null_of_sexp: list must represent or_null value" sexp
+    | Atom _ -> of_sexp_error "or_null_of_sexp: only null can be atom" sexp)
+  else (
+    match sexp with
+    | Atom ("null" | "Null") -> Or_null_shim.Null
+    | List [ Atom ("this" | "This"); el ] -> This (a__of_sexp el)
+    | Atom _ -> of_sexp_error "or_null_of_sexp: only null can be atom" sexp
+    | List _ -> of_sexp_error "or_null_of_sexp: list must be (this el)" sexp)
+;;
+
 let pair_of_sexp a__of_sexp b__of_sexp sexp =
   match sexp with
   | List [ a_sexp; b_sexp ] ->
@@ -615,3 +652,297 @@ let () =
 
 external ignore : (_[@local_opt]) -> unit @@ portable = "%ignore"
 external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%equal"
+
+(* The compiler generates *catastrophically* bad code if you let it inline this function.
+   But with that prevented, the compiler reliably optimizes this to a load from a
+   statically allocated array. *)
+let[@zero_alloc] [@inline never] [@local never] [@specialise never] sexp_of_char_statically_allocated
+  = function
+  (*$
+    for i = 0 to 255 do
+      Printf.printf "| '\\x%02x' -> Atom \"\\x%02x\"\n" i i
+    done
+  *)
+  | '\x00' -> Atom "\x00"
+  | '\x01' -> Atom "\x01"
+  | '\x02' -> Atom "\x02"
+  | '\x03' -> Atom "\x03"
+  | '\x04' -> Atom "\x04"
+  | '\x05' -> Atom "\x05"
+  | '\x06' -> Atom "\x06"
+  | '\x07' -> Atom "\x07"
+  | '\x08' -> Atom "\x08"
+  | '\x09' -> Atom "\x09"
+  | '\x0a' -> Atom "\x0a"
+  | '\x0b' -> Atom "\x0b"
+  | '\x0c' -> Atom "\x0c"
+  | '\x0d' -> Atom "\x0d"
+  | '\x0e' -> Atom "\x0e"
+  | '\x0f' -> Atom "\x0f"
+  | '\x10' -> Atom "\x10"
+  | '\x11' -> Atom "\x11"
+  | '\x12' -> Atom "\x12"
+  | '\x13' -> Atom "\x13"
+  | '\x14' -> Atom "\x14"
+  | '\x15' -> Atom "\x15"
+  | '\x16' -> Atom "\x16"
+  | '\x17' -> Atom "\x17"
+  | '\x18' -> Atom "\x18"
+  | '\x19' -> Atom "\x19"
+  | '\x1a' -> Atom "\x1a"
+  | '\x1b' -> Atom "\x1b"
+  | '\x1c' -> Atom "\x1c"
+  | '\x1d' -> Atom "\x1d"
+  | '\x1e' -> Atom "\x1e"
+  | '\x1f' -> Atom "\x1f"
+  | '\x20' -> Atom "\x20"
+  | '\x21' -> Atom "\x21"
+  | '\x22' -> Atom "\x22"
+  | '\x23' -> Atom "\x23"
+  | '\x24' -> Atom "\x24"
+  | '\x25' -> Atom "\x25"
+  | '\x26' -> Atom "\x26"
+  | '\x27' -> Atom "\x27"
+  | '\x28' -> Atom "\x28"
+  | '\x29' -> Atom "\x29"
+  | '\x2a' -> Atom "\x2a"
+  | '\x2b' -> Atom "\x2b"
+  | '\x2c' -> Atom "\x2c"
+  | '\x2d' -> Atom "\x2d"
+  | '\x2e' -> Atom "\x2e"
+  | '\x2f' -> Atom "\x2f"
+  | '\x30' -> Atom "\x30"
+  | '\x31' -> Atom "\x31"
+  | '\x32' -> Atom "\x32"
+  | '\x33' -> Atom "\x33"
+  | '\x34' -> Atom "\x34"
+  | '\x35' -> Atom "\x35"
+  | '\x36' -> Atom "\x36"
+  | '\x37' -> Atom "\x37"
+  | '\x38' -> Atom "\x38"
+  | '\x39' -> Atom "\x39"
+  | '\x3a' -> Atom "\x3a"
+  | '\x3b' -> Atom "\x3b"
+  | '\x3c' -> Atom "\x3c"
+  | '\x3d' -> Atom "\x3d"
+  | '\x3e' -> Atom "\x3e"
+  | '\x3f' -> Atom "\x3f"
+  | '\x40' -> Atom "\x40"
+  | '\x41' -> Atom "\x41"
+  | '\x42' -> Atom "\x42"
+  | '\x43' -> Atom "\x43"
+  | '\x44' -> Atom "\x44"
+  | '\x45' -> Atom "\x45"
+  | '\x46' -> Atom "\x46"
+  | '\x47' -> Atom "\x47"
+  | '\x48' -> Atom "\x48"
+  | '\x49' -> Atom "\x49"
+  | '\x4a' -> Atom "\x4a"
+  | '\x4b' -> Atom "\x4b"
+  | '\x4c' -> Atom "\x4c"
+  | '\x4d' -> Atom "\x4d"
+  | '\x4e' -> Atom "\x4e"
+  | '\x4f' -> Atom "\x4f"
+  | '\x50' -> Atom "\x50"
+  | '\x51' -> Atom "\x51"
+  | '\x52' -> Atom "\x52"
+  | '\x53' -> Atom "\x53"
+  | '\x54' -> Atom "\x54"
+  | '\x55' -> Atom "\x55"
+  | '\x56' -> Atom "\x56"
+  | '\x57' -> Atom "\x57"
+  | '\x58' -> Atom "\x58"
+  | '\x59' -> Atom "\x59"
+  | '\x5a' -> Atom "\x5a"
+  | '\x5b' -> Atom "\x5b"
+  | '\x5c' -> Atom "\x5c"
+  | '\x5d' -> Atom "\x5d"
+  | '\x5e' -> Atom "\x5e"
+  | '\x5f' -> Atom "\x5f"
+  | '\x60' -> Atom "\x60"
+  | '\x61' -> Atom "\x61"
+  | '\x62' -> Atom "\x62"
+  | '\x63' -> Atom "\x63"
+  | '\x64' -> Atom "\x64"
+  | '\x65' -> Atom "\x65"
+  | '\x66' -> Atom "\x66"
+  | '\x67' -> Atom "\x67"
+  | '\x68' -> Atom "\x68"
+  | '\x69' -> Atom "\x69"
+  | '\x6a' -> Atom "\x6a"
+  | '\x6b' -> Atom "\x6b"
+  | '\x6c' -> Atom "\x6c"
+  | '\x6d' -> Atom "\x6d"
+  | '\x6e' -> Atom "\x6e"
+  | '\x6f' -> Atom "\x6f"
+  | '\x70' -> Atom "\x70"
+  | '\x71' -> Atom "\x71"
+  | '\x72' -> Atom "\x72"
+  | '\x73' -> Atom "\x73"
+  | '\x74' -> Atom "\x74"
+  | '\x75' -> Atom "\x75"
+  | '\x76' -> Atom "\x76"
+  | '\x77' -> Atom "\x77"
+  | '\x78' -> Atom "\x78"
+  | '\x79' -> Atom "\x79"
+  | '\x7a' -> Atom "\x7a"
+  | '\x7b' -> Atom "\x7b"
+  | '\x7c' -> Atom "\x7c"
+  | '\x7d' -> Atom "\x7d"
+  | '\x7e' -> Atom "\x7e"
+  | '\x7f' -> Atom "\x7f"
+  | '\x80' -> Atom "\x80"
+  | '\x81' -> Atom "\x81"
+  | '\x82' -> Atom "\x82"
+  | '\x83' -> Atom "\x83"
+  | '\x84' -> Atom "\x84"
+  | '\x85' -> Atom "\x85"
+  | '\x86' -> Atom "\x86"
+  | '\x87' -> Atom "\x87"
+  | '\x88' -> Atom "\x88"
+  | '\x89' -> Atom "\x89"
+  | '\x8a' -> Atom "\x8a"
+  | '\x8b' -> Atom "\x8b"
+  | '\x8c' -> Atom "\x8c"
+  | '\x8d' -> Atom "\x8d"
+  | '\x8e' -> Atom "\x8e"
+  | '\x8f' -> Atom "\x8f"
+  | '\x90' -> Atom "\x90"
+  | '\x91' -> Atom "\x91"
+  | '\x92' -> Atom "\x92"
+  | '\x93' -> Atom "\x93"
+  | '\x94' -> Atom "\x94"
+  | '\x95' -> Atom "\x95"
+  | '\x96' -> Atom "\x96"
+  | '\x97' -> Atom "\x97"
+  | '\x98' -> Atom "\x98"
+  | '\x99' -> Atom "\x99"
+  | '\x9a' -> Atom "\x9a"
+  | '\x9b' -> Atom "\x9b"
+  | '\x9c' -> Atom "\x9c"
+  | '\x9d' -> Atom "\x9d"
+  | '\x9e' -> Atom "\x9e"
+  | '\x9f' -> Atom "\x9f"
+  | '\xa0' -> Atom "\xa0"
+  | '\xa1' -> Atom "\xa1"
+  | '\xa2' -> Atom "\xa2"
+  | '\xa3' -> Atom "\xa3"
+  | '\xa4' -> Atom "\xa4"
+  | '\xa5' -> Atom "\xa5"
+  | '\xa6' -> Atom "\xa6"
+  | '\xa7' -> Atom "\xa7"
+  | '\xa8' -> Atom "\xa8"
+  | '\xa9' -> Atom "\xa9"
+  | '\xaa' -> Atom "\xaa"
+  | '\xab' -> Atom "\xab"
+  | '\xac' -> Atom "\xac"
+  | '\xad' -> Atom "\xad"
+  | '\xae' -> Atom "\xae"
+  | '\xaf' -> Atom "\xaf"
+  | '\xb0' -> Atom "\xb0"
+  | '\xb1' -> Atom "\xb1"
+  | '\xb2' -> Atom "\xb2"
+  | '\xb3' -> Atom "\xb3"
+  | '\xb4' -> Atom "\xb4"
+  | '\xb5' -> Atom "\xb5"
+  | '\xb6' -> Atom "\xb6"
+  | '\xb7' -> Atom "\xb7"
+  | '\xb8' -> Atom "\xb8"
+  | '\xb9' -> Atom "\xb9"
+  | '\xba' -> Atom "\xba"
+  | '\xbb' -> Atom "\xbb"
+  | '\xbc' -> Atom "\xbc"
+  | '\xbd' -> Atom "\xbd"
+  | '\xbe' -> Atom "\xbe"
+  | '\xbf' -> Atom "\xbf"
+  | '\xc0' -> Atom "\xc0"
+  | '\xc1' -> Atom "\xc1"
+  | '\xc2' -> Atom "\xc2"
+  | '\xc3' -> Atom "\xc3"
+  | '\xc4' -> Atom "\xc4"
+  | '\xc5' -> Atom "\xc5"
+  | '\xc6' -> Atom "\xc6"
+  | '\xc7' -> Atom "\xc7"
+  | '\xc8' -> Atom "\xc8"
+  | '\xc9' -> Atom "\xc9"
+  | '\xca' -> Atom "\xca"
+  | '\xcb' -> Atom "\xcb"
+  | '\xcc' -> Atom "\xcc"
+  | '\xcd' -> Atom "\xcd"
+  | '\xce' -> Atom "\xce"
+  | '\xcf' -> Atom "\xcf"
+  | '\xd0' -> Atom "\xd0"
+  | '\xd1' -> Atom "\xd1"
+  | '\xd2' -> Atom "\xd2"
+  | '\xd3' -> Atom "\xd3"
+  | '\xd4' -> Atom "\xd4"
+  | '\xd5' -> Atom "\xd5"
+  | '\xd6' -> Atom "\xd6"
+  | '\xd7' -> Atom "\xd7"
+  | '\xd8' -> Atom "\xd8"
+  | '\xd9' -> Atom "\xd9"
+  | '\xda' -> Atom "\xda"
+  | '\xdb' -> Atom "\xdb"
+  | '\xdc' -> Atom "\xdc"
+  | '\xdd' -> Atom "\xdd"
+  | '\xde' -> Atom "\xde"
+  | '\xdf' -> Atom "\xdf"
+  | '\xe0' -> Atom "\xe0"
+  | '\xe1' -> Atom "\xe1"
+  | '\xe2' -> Atom "\xe2"
+  | '\xe3' -> Atom "\xe3"
+  | '\xe4' -> Atom "\xe4"
+  | '\xe5' -> Atom "\xe5"
+  | '\xe6' -> Atom "\xe6"
+  | '\xe7' -> Atom "\xe7"
+  | '\xe8' -> Atom "\xe8"
+  | '\xe9' -> Atom "\xe9"
+  | '\xea' -> Atom "\xea"
+  | '\xeb' -> Atom "\xeb"
+  | '\xec' -> Atom "\xec"
+  | '\xed' -> Atom "\xed"
+  | '\xee' -> Atom "\xee"
+  | '\xef' -> Atom "\xef"
+  | '\xf0' -> Atom "\xf0"
+  | '\xf1' -> Atom "\xf1"
+  | '\xf2' -> Atom "\xf2"
+  | '\xf3' -> Atom "\xf3"
+  | '\xf4' -> Atom "\xf4"
+  | '\xf5' -> Atom "\xf5"
+  | '\xf6' -> Atom "\xf6"
+  | '\xf7' -> Atom "\xf7"
+  | '\xf8' -> Atom "\xf8"
+  | '\xf9' -> Atom "\xf9"
+  | '\xfa' -> Atom "\xfa"
+  | '\xfb' -> Atom "\xfb"
+  | '\xfc' -> Atom "\xfc"
+  | '\xfd' -> Atom "\xfd"
+  | '\xfe' -> Atom "\xfe"
+  | '\xff' -> Atom "\xff"
+;;
+
+(*$*)
+
+let[@inline always] is_valid_char (char : char) : bool = Char.code char land lnot 0xff = 0
+
+let[@inline never] [@local never] [@specialise never] fallback_sexp_of_char (char : char) =
+  Atom ((String.make [@inlined never]) 1 char)
+;;
+
+let[@inline always] sexp_of_char (char : char) =
+  if is_valid_char char
+  then sexp_of_char_statically_allocated char [@tail]
+  else fallback_sexp_of_char char [@tail]
+;;
+
+let[@inline never] [@local never] [@specialise never] fallback_sexp_of_char__local
+  (char : char)
+  = exclave_
+  Atom ((string_make_local [@inlined never]) 1 char)
+;;
+
+let[@inline always] sexp_of_char__local (char : char) = exclave_
+  if is_valid_char char
+  then sexp_of_char_statically_allocated char
+  else fallback_sexp_of_char__local char
+;;
