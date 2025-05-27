@@ -285,12 +285,14 @@ module Exn_converter = struct
             Portability_hacks.Cross.Contended.(cross extension_constructor)
               extension_constructor
           in
-          Exn_table.find_opt the_exn_table extension_constructor
-          |> Portability_hacks.Cross.Portable.(cross (option infer)))
-        |> Portability_hacks.Cross.Contended.(cross (option infer)))
+          { Stdlib_shim.Modes.Aliased.aliased =
+              (Exn_table.find_opt the_exn_table extension_constructor
+               : Registration.t option)
+          })
+        [@nontail])
     with
-    | None -> None
-    | Some ({ sexp_of_exn; printexc } : Registration.t) ->
+    | { aliased = None } -> None
+    | { aliased = Some { sexp_of_exn; printexc } } ->
       (match for_printexc, printexc with
        | false, _ | _, true -> Some (sexp_of_exn exn)
        | true, false -> None)
