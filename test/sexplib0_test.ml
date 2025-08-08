@@ -2,7 +2,7 @@ open! Base
 open Expect_test_helpers_base
 open Sexplib0
 
-let () = sexp_style := Sexp_style.simple_pretty
+let () = Dynamic.set_root sexp_style Sexp_style.simple_pretty
 
 module type S = sig
   type t [@@deriving equal, sexp]
@@ -526,15 +526,50 @@ let%expect_test "record with polymorphic fields" =
     ())
 ;;
 
+[%%template
+[@@@alloc.default a = (stack, heap)]
+
 let%expect_test _ =
   let big_string = String.init 5_000_000 ~f:(fun i -> String.get (Int.to_string i) 0) in
-  let sexp = [%sexp (big_string : string)] in
+  let sexp = [%sexp (big_string : string)] [@alloc a] in
   let sexp_string =
     (* In an experimental compiler version, this would overflow the stack. *)
-    Sexp.to_string sexp
+    (Sexp.to_string [@alloc a]) sexp
   in
   print_endline (Int.to_string_hum (String.length sexp_string));
   [%expect {| 5_000_000 |}]
+;;]
+
+let%expect_test "simple [to_string__stack] test" =
+  let sexp : Sexp.t =
+    List [ Atom "atom-at-0"; List [ Atom "atom-at-1-a"; Atom "atom-at-1-b" ] ]
+  in
+  let print_local s = s |> String.globalize |> print_endline in
+  (Sexp.to_string [@alloc stack]) sexp |> print_local;
+  [%expect {| (atom-at-0(atom-at-1-a atom-at-1-b)) |}];
+  (Sexp.to_string_mach [@alloc stack]) sexp |> print_local;
+  [%expect {| (atom-at-0(atom-at-1-a atom-at-1-b)) |}]
+;;
+
+let%expect_test _ =
+  Base_quickcheck.Test.run_exn
+    (module struct
+      include Sexp
+
+      let quickcheck_generator = Base_quickcheck.Generator.sexp
+      let quickcheck_shrinker = Base_quickcheck.Shrinker.sexp
+    end)
+    ~f:(fun sexp ->
+      let str = Sexp.to_string sexp in
+      let stack_allocated_str =
+        (Sexp.to_string [@alloc stack]) sexp |> String.globalize
+      in
+      require_equal (module String) str stack_allocated_str;
+      let str_mach = Sexp.to_string_mach sexp in
+      let stack_allocated_str_mach =
+        (Sexp.to_string_mach [@alloc stack]) sexp |> String.globalize
+      in
+      require_equal (module String) str_mach stack_allocated_str_mach)
 ;;
 
 (* Assert that the module types defined by sexplib0 are equivalent to those derived by

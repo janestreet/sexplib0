@@ -37,3 +37,5 @@ val ptag_takes_args : string -> Sexp.t -> _
 val nested_list_invalid_poly_var : string -> Sexp.t -> _
 val empty_list_invalid_poly_var : string -> Sexp.t -> _
 val empty_type : string -> Sexp.t -> _
+
+type nothing = |

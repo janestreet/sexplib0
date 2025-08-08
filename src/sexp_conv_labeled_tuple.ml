@@ -1,7 +1,14 @@
+module Layout_witness = struct
+  type _ t =
+    | Value : _ t
+    | Any : 'a. (unit -> 'a) t
+end
+
 module Fields = struct
   type _ t =
     | Field :
         { name : string
+        ; layout : 'a Layout_witness.t
         ; conv : Sexp.t -> 'a
         ; rest : 'b t
         }
@@ -34,7 +41,7 @@ let[@tail_mod_cons] rec of_list
     (match list with
      | [] -> ()
      | _ :: _ -> Sexp_conv_error.tuple_of_size_n_expected caller len original_sexp)
-  | Field { name; conv; rest } ->
+  | Field { name; conv; rest; layout = _ } ->
     (match list with
      | [] -> Sexp_conv_error.tuple_of_size_n_expected caller len original_sexp
      | sexp :: list ->
