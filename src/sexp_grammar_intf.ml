@@ -186,10 +186,10 @@ module type Sexp_grammar = sig
   end
 
   (** Convert a sexp grammar for one type to another. *)
-  val coerce : 'a t -> 'b t
+  val coerce : 'a 'b. 'a t -> 'b t
 
   (** Add a key/value tag to a grammar. *)
-  val tag : 'a t -> key:string -> value:Sexp.t -> 'a t
+  val tag : 'a. 'a t -> key:string -> value:Sexp.t -> 'a t
 
   (** This reserved key is used for all tags generated from doc comments. *)
   val doc_comment_tag : string

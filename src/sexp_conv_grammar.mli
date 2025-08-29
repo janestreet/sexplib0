@@ -25,8 +25,8 @@ val nativeint_sexp_grammar : nativeint Sexp_grammar.t
 val sexp_t_sexp_grammar : Sexp.t Sexp_grammar.t
 val ref_sexp_grammar : 'a Sexp_grammar.t -> 'a ref Sexp_grammar.t
 val lazy_t_sexp_grammar : 'a Sexp_grammar.t -> 'a lazy_t Sexp_grammar.t
-val option_sexp_grammar : 'a Sexp_grammar.t -> 'a option Sexp_grammar.t
-val list_sexp_grammar : 'a Sexp_grammar.t -> 'a list Sexp_grammar.t
-val array_sexp_grammar : 'a Sexp_grammar.t -> 'a array Sexp_grammar.t
-val opaque_sexp_grammar : 'a Sexp_grammar.t
+val option_sexp_grammar : 'a. 'a Sexp_grammar.t -> 'a option Sexp_grammar.t
+val list_sexp_grammar : 'a. 'a Sexp_grammar.t -> 'a list Sexp_grammar.t
+val array_sexp_grammar : 'a. 'a Sexp_grammar.t -> 'a array Sexp_grammar.t
+val opaque_sexp_grammar : 'a. 'a Sexp_grammar.t
 val fun_sexp_grammar : 'a Sexp_grammar.t
