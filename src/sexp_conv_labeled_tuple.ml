@@ -1,18 +1,12 @@
-module Layout_witness = struct
-  type _ t =
-    | Value : _ t
-    | Any : 'a. (unit -> 'a) t
-end
-
 module Fields = struct
   type _ t =
     | Field :
+        'a 'b.
         { name : string
-        ; layout : 'a Layout_witness.t
-        ; conv : Sexp.t -> 'a
+        ; conv : Sexp.t -> unit -> 'a
         ; rest : 'b t
         }
-        -> ('a * 'b) t
+        -> ((unit -> 'a) * 'b) t
     | Empty : unit t
 
   let rec length_loop : type a. a t -> int -> int =
@@ -41,7 +35,7 @@ let[@tail_mod_cons] rec of_list
     (match list with
      | [] -> ()
      | _ :: _ -> Sexp_conv_error.tuple_of_size_n_expected caller len original_sexp)
-  | Field { name; conv; rest; layout = _ } ->
+  | Field { name; conv; rest } ->
     (match list with
      | [] -> Sexp_conv_error.tuple_of_size_n_expected caller len original_sexp
      | sexp :: list ->

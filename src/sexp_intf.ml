@@ -46,11 +46,13 @@ module Definitions = struct
 
     (** {1 Conversion to strings} *)
 
-    (** [to_string_hum ?indent sexp] converts S-expression [sexp] to a string in human
-        readable form with indentation level [indent].
+    (** [to_string_hum ?indent ?max_width sexp] converts S-expression [sexp] to a string
+        in human readable form with indentation level [indent] and target maximum width
+        [max_width]. Note long atoms may overflow [max_width].
 
-        @param indent default = [!default_indent] *)
-    val to_string_hum : ?indent:int -> t -> output
+        @param indent default = [Dynamic.get default_indent]
+        @param max_width default = [78] *)
+    val to_string_hum : ?indent:int -> ?max_width:int -> t -> output
 
     (** [to_string_mach sexp] converts S-expression [sexp] to a string in machine readable
         (i.e. most compact) form. *)
@@ -61,11 +63,14 @@ module Definitions = struct
 
     (** {1 Conversion to buffers} *)
 
-    (** [to_buffer_hum ~buf ?indent sexp] outputs the S-expression [sexp] converted to a
-        string in human readable form to buffer [buf].
+    (** [to_buffer_hum ~buf ?indent ?max_width sexp] outputs the S-expression [sexp]
+        converted to a string in human readable form to buffer [buf] with indentation
+        level [indent] and target maximum width [max_width]. Note long atoms may overflow
+        [max_width].
 
-        @param indent default = [!default_indent] *)
-    val to_buffer_hum : buf:Buffer.t -> ?indent:int -> t -> unit
+        @param indent default = [Dynamic.get default_indent]
+        @param max_width default = [78] *)
+    val to_buffer_hum : buf:Buffer.t -> ?indent:int -> ?max_width:int -> t -> unit
 
     (** [to_buffer_mach ~buf sexp] outputs the S-expression [sexp] converted to a string
         in machine readable (i.e. most compact) form to buffer [buf]. *)
@@ -146,7 +151,7 @@ module type Sexp = sig
   (** [default_indent] reference to default indentation level for human-readable
       conversions.
 
-      Initialisation value: 2. *)
+      Initialisation value: 1. *)
   val default_indent : int Dynamic.t
 
   (** {1 Pretty printing of S-expressions} *)

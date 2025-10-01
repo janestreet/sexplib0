@@ -3,6 +3,11 @@
 open StdLabels
 open MoreLabels
 open Basement
+
+open Blocking_sync [@@alert
+                     "-deprecated"
+                     (* Used here since sexplib0 can't depend on Await_sync *)]
+
 open Printf
 open Sexp
 
@@ -219,12 +224,12 @@ module Exn_converter = struct
   module type The_exn_table = sig
     type key
 
-    val lock : key Capsule.Mutex.t
+    val lock : key Mutex.t
   end
 
   module The_exn_table : The_exn_table =
     (val let (Capsule.Key.P (type key) (key : key Capsule.Key.t)) = Capsule.create () in
-         let lock = Capsule.Mutex.create key in
+         let lock = Mutex.create key in
          (module struct
            type nonrec key = key
 
@@ -242,7 +247,7 @@ module Exn_converter = struct
     let extension_constructor =
       Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
     in
-    Capsule.Mutex.with_lock The_exn_table.lock ~f:(fun password ->
+    Mutex.with_lock The_exn_table.lock ~f:(fun password ->
       Capsule.Data.iter the_exn_table ~password ~f:(fun the_exn_table ->
         let extension_constructor =
           Portability_hacks.Cross.Contended.(cross extension_constructor)
@@ -260,7 +265,7 @@ module Exn_converter = struct
       Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
     in
     match
-      Capsule.Mutex.with_lock The_exn_table.lock ~f:(fun password ->
+      Mutex.with_lock The_exn_table.lock ~f:(fun password ->
         Capsule.Data.extract the_exn_table ~password ~f:(fun the_exn_table ->
           let extension_constructor =
             Portability_hacks.Cross.Contended.(cross extension_constructor)
@@ -281,7 +286,7 @@ module Exn_converter = struct
 
   module For_unit_tests_only = struct
     let size () =
-      Capsule.Mutex.with_lock The_exn_table.lock ~f:(fun password ->
+      Mutex.with_lock The_exn_table.lock ~f:(fun password ->
         Capsule.Data.extract the_exn_table ~password ~f:(fun the_exn_table ->
           (Exn_table.stats_alive the_exn_table).num_bindings))
     ;;

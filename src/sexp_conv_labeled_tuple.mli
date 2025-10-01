@@ -2,21 +2,15 @@
    Street's experimental branch of the compiler
    (https://github.com/ocaml-flambda/flambda-backend/). *)
 
-module Layout_witness : sig
-  type _ t =
-    | Value : _ t
-    | Any : 'a. (unit -> 'a) t
-end
-
 module Fields : sig
   type _ t =
     | Field :
+        'a 'b.
         { name : string
-        ; layout : 'a Layout_witness.t
-        ; conv : Sexp.t -> 'a
+        ; conv : Sexp.t -> unit -> 'a
         ; rest : 'b t
         }
-        -> ('a * 'b) t
+        -> ((unit -> 'a) * 'b) t
     | Empty : unit t
 end
 

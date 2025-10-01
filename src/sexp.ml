@@ -186,8 +186,13 @@ module Printing = struct
     Pretty_printing with type output := string = struct
     include Helpers
 
-    let to_buffer_hum ~buf ?(indent = Dynamic.get default_indent) sexp =
+    let to_buffer_hum ~buf ?(indent = Dynamic.get default_indent) ?max_width sexp =
       let ppf = Format.formatter_of_buffer buf in
+      let () =
+        match max_width with
+        | Some width -> Format.pp_set_margin ppf width
+        | None -> ()
+      in
       Format.fprintf ppf "%a@?" (pp_hum_indent indent) sexp
     ;;
 
@@ -221,14 +226,14 @@ module Printing = struct
 
     (* String conversions *)
 
-    let to_string_hum ?indent = function
+    let to_string_hum ?indent ?max_width = function
       | Atom str
         when match index_of_newline str 0 with
              | None -> true
              | Some _ -> false -> mach_maybe_esc_str str
       | sexp ->
         let buf = buffer () in
-        to_buffer_hum ?indent sexp ~buf;
+        to_buffer_hum ~buf ?indent ?max_width sexp;
         Buffer.contents buf
     ;;
 
