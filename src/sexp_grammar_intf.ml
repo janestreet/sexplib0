@@ -177,7 +177,7 @@ module Definitions = struct
   (** Top-level grammar type. Has a phantom type parameter to associate each grammar with
       the type its sexps represent. This makes it harder to apply grammars to the wrong
       type, while grammars can still be easily coerced to a new type if needed. *)
-  type _ t : value mod contended portable = { untyped : grammar } [@@unboxed]
+  type (_ : any) t : value mod contended portable = { untyped : grammar } [@@unboxed]
 end
 
 module type Sexp_grammar = sig @@ portable
@@ -186,10 +186,10 @@ module type Sexp_grammar = sig @@ portable
   end
 
   (** Convert a sexp grammar for one type to another. *)
-  val coerce : 'a t -> 'b t
+  val coerce : ('a : any) ('b : any). 'a t -> 'b t
 
   (** Add a key/value tag to a grammar. *)
-  val tag : 'a t -> key:string -> value:Sexp.t -> 'a t
+  val tag : ('a : any). 'a t -> key:string -> value:Sexp.t -> 'a t
 
   (** This reserved key is used for all tags generated from doc comments. *)
   val doc_comment_tag : string

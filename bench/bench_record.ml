@@ -26,58 +26,62 @@ let t_of_sexp =
       (Field
          { name = "a"
          ; kind = Required
-         ; conv = int_of_sexp
-         ; layout = Value
+         ; conv =
+             (fun sexp ->
+               let value = int_of_sexp sexp in
+               fun () -> value)
          ; rest =
              Field
                { name = "b"
                ; kind = Omit_nil
-               ; conv = option_of_sexp int_of_sexp
-               ; layout = Value
+               ; conv =
+                   (fun sexp ->
+                     let value = option_of_sexp int_of_sexp sexp in
+                     fun () -> value)
                ; rest =
                    Field
                      { name = "c"
                      ; kind = Sexp_bool
                      ; conv = ()
-                     ; layout = Value
                      ; rest =
                          Field
                            { name = "d"
                            ; kind = Sexp_array
                            ; conv = int_of_sexp
-                           ; layout = Value
                            ; rest =
                                Field
                                  { name = "e"
                                  ; kind = Sexp_list
                                  ; conv = int_of_sexp
-                                 ; layout = Value
                                  ; rest =
                                      Field
                                        { name = "f"
                                        ; kind = Sexp_option
                                        ; conv = int_of_sexp
-                                       ; layout = Value
                                        ; rest =
                                            Field
                                              { name = "g"
                                              ; kind = Default (fun () -> 0)
-                                             ; conv = int_of_sexp
-                                             ; layout = Value
+                                             ; conv =
+                                                 (fun sexp ->
+                                                   let value = int_of_sexp sexp in
+                                                   fun () -> value)
                                              ; rest =
                                                  Field
                                                    { name = "h"
                                                    ; kind = Required
-                                                   ; layout = Value
                                                    ; conv =
                                                        (fun sexp ->
-                                                         { h =
-                                                             list_of_sexp
-                                                               (Sexplib0.Sexp_conv_error
-                                                                .record_poly_field_value
-                                                                  "Record.t")
-                                                               sexp
-                                                         })
+                                                         let value =
+                                                           { h =
+                                                               list_of_sexp
+                                                                 (Sexplib0.Sexp_conv_error
+                                                                  .record_poly_field_value
+                                                                    "Record.t")
+                                                                 sexp
+                                                           }
+                                                         in
+                                                         fun () -> value)
                                                    ; rest = Empty
                                                    }
                                              }
@@ -98,7 +102,11 @@ let t_of_sexp =
       | "h" -> 7
       | _ -> -1)
     ~allow_extra_fields:false
-    ~create:(fun (a, (b, (c, (d, (e, (f, (g, ({ h }, ())))))))) ->
+    ~create:(fun (a, (b, (c, (d, (e, (f, (g, (h, ())))))))) ->
+      let a = a () in
+      let b = b () in
+      let g = g () in
+      let { h } = h () in
       { a; b; c; d; e; f; g; h })
 ;;
 

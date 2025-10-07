@@ -5,19 +5,13 @@ open Sexp_conv_error
 
 module Kind = struct
   type (_, _) t =
-    | Default : (unit -> 'a) -> ('a, Sexp.t -> 'a) t
-    | Omit_nil : ('a, Sexp.t -> 'a) t
-    | Required : ('a, Sexp.t -> 'a) t
+    | Default : ('a : any). (unit -> 'a) -> (unit -> 'a, Sexp.t -> unit -> 'a) t
+    | Omit_nil : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
+    | Required : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
     | Sexp_array : ('a array, Sexp.t -> 'a) t
     | Sexp_bool : (bool, unit) t
     | Sexp_list : ('a list, Sexp.t -> 'a) t
     | Sexp_option : ('a option, Sexp.t -> 'a) t
-end
-
-module Layout_witness = struct
-  type _ t =
-    | Value : _ t
-    | Any : ('a : any). (unit -> 'a) t
 end
 
 module Fields = struct
@@ -26,7 +20,6 @@ module Fields = struct
     | Field :
         { name : string
         ; kind : ('a, 'conv) Kind.t
-        ; layout : 'a Layout_witness.t
         ; conv : 'conv
         ; rest : 'b t
         }
@@ -114,9 +107,11 @@ let rec parse_value_malformed
   in
   raise (Malformed malformed)
 
-and parse_value : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int -> a * b =
+and[@tail_mod_cons] parse_value
+  : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int -> a * b
+  =
   fun ~fields ~state ~pos ->
-  let (Field { name; kind; conv; rest; layout = _ }) = fields in
+  let (Field { name; kind; conv; rest }) = fields in
   let value : a =
     match kind, State.unsafe_get state pos with
     (* well-formed *)
@@ -138,7 +133,7 @@ and parse_value : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int 
     (* absent *)
     | Required, Atom _ ->
       parse_value_malformed (Malformed.missing [ name ]) ~fields ~state ~pos
-    | Default default, Atom _ -> default ()
+    | Default default, Atom _ -> default
     | Omit_nil, Atom _ -> conv (List [])
     | Sexp_option, Atom _ -> None
     | Sexp_list, Atom _ -> []
@@ -147,7 +142,9 @@ and parse_value : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int 
   in
   value, parse_values ~fields:rest ~state ~pos:(pos + 1)
 
-and parse_values : type a. fields:a Fields.t -> state:State.t -> pos:int -> a =
+and[@tail_mod_cons] parse_values
+  : type a. fields:a Fields.t -> state:State.t -> pos:int -> a
+  =
   fun ~fields ~state ~pos ->
   match fields with
   | Field _ -> parse_value ~fields ~state ~pos
@@ -232,7 +229,7 @@ let parse_record_slow ~fields ~index ~extra ~seen sexps =
 (* Fast path for record parsing. Directly parses and returns fields in the order they are
    declared. Falls back on slow path if any fields are absent, reordered, or malformed. *)
 
-let rec parse_field_fast
+let[@tail_mod_cons] rec parse_field_fast
   : type a b.
     fields:(a * b) Fields.t
     -> index:(string -> int)
@@ -242,7 +239,7 @@ let rec parse_field_fast
     -> a * b
   =
   fun ~fields ~index ~extra ~seen sexps ->
-  let (Field { name; kind; conv; rest; layout = _ }) = fields in
+  let (Field { name; kind; conv; rest }) = fields in
   match sexps with
   | List (Atom atom :: args) :: others when String.equal atom name ->
     (match kind, args with
@@ -264,11 +261,11 @@ let rec parse_field_fast
      | Sexp_bool, [] ->
        true, parse_spine_fast ~fields:rest ~index ~extra ~seen:(seen + 1) others
      (* malformed field of some kind, dispatch to slow path *)
-     | _, _ -> parse_record_slow ~fields ~index ~extra ~seen sexps)
+     | _, _ -> (parse_record_slow [@tailcall false]) ~fields ~index ~extra ~seen sexps)
   (* malformed or out-of-order field, dispatch to slow path *)
-  | _ -> parse_record_slow ~fields ~index ~extra ~seen sexps
+  | _ -> (parse_record_slow [@tailcall false]) ~fields ~index ~extra ~seen sexps
 
-and parse_spine_fast
+and[@tail_mod_cons] parse_spine_fast
   : type a.
     fields:a Fields.t
     -> index:(string -> int)
@@ -285,7 +282,7 @@ and parse_spine_fast
      | [] -> ()
      | _ :: _ ->
        (* extra sexps, dispatch to slow path *)
-       parse_record_slow ~fields ~index ~extra ~seen sexps)
+       (parse_record_slow [@tailcall false]) ~fields ~index ~extra ~seen sexps)
 ;;
 
 let parse_record_fast ~fields ~index ~extra sexps =

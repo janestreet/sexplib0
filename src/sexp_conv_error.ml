@@ -124,3 +124,5 @@ let empty_list_invalid_poly_var =
 ;;
 
 let empty_type = simple_error "trying to convert an empty type"
+
+type nothing = |

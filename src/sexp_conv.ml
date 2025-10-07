@@ -3,6 +3,11 @@
 open StdLabels
 open MoreLabels
 open Basement
+
+open Blocking_sync [@@alert
+                     "-deprecated"
+                     (* Used here since sexplib0 can't depend on Await_sync *)]
+
 open Printf
 open Sexp
 
@@ -100,7 +105,7 @@ let read_old_option_format = Dynamic.make true
 let write_old_option_format = Dynamic.make true
 let list_map f l = List.map l ~f
 
-let list_map__local f lst = exclave_
+let list_map__stack f lst = exclave_
   let rec rev lst acc = exclave_
     match lst with
     | [] -> acc
@@ -115,36 +120,36 @@ let list_map__local f lst = exclave_
 ;;
 
 let sexp_of_unit () = List []
-let sexp_of_unit__local () = exclave_ List []
+let sexp_of_unit__stack () = exclave_ List []
 
 let[@zero_alloc] sexp_of_bool = function
   | false -> Atom "false"
   | true -> Atom "true"
 ;;
 
-let sexp_of_bool__local = sexp_of_bool
+let sexp_of_bool__stack = sexp_of_bool
 let sexp_of_string str = Atom str
-let sexp_of_string__local str = exclave_ Atom str
+let sexp_of_string__stack str = exclave_ Atom str
 let sexp_of_bytes bytes = Atom (Bytes.to_string bytes)
-let sexp_of_bytes__local bytes = exclave_ Atom (bytes_to_string_local bytes)
+let sexp_of_bytes__stack bytes = exclave_ Atom (bytes_to_string_local bytes)
 let sexp_of_int n = Atom (string_of_int n)
-let sexp_of_int__local n = exclave_ Atom (string_of_int n)
+let sexp_of_int__stack n = exclave_ Atom (string_of_int n)
 let sexp_of_float n = Atom ((Dynamic.get default_string_of_float) n)
 
-let sexp_of_float__local n = exclave_
+let sexp_of_float__stack n = exclave_
   Atom ((Dynamic.get default_string_of_float) (globalize_float n))
 ;;
 
 let sexp_of_int32 n = Atom (Int32.to_string n)
-let sexp_of_int32__local n = exclave_ Atom (string_of_int32 n)
+let sexp_of_int32__stack n = exclave_ Atom (string_of_int32 n)
 let sexp_of_int64 n = Atom (Int64.to_string n)
-let sexp_of_int64__local n = exclave_ Atom (string_of_int64 n)
+let sexp_of_int64__stack n = exclave_ Atom (string_of_int64 n)
 let sexp_of_nativeint n = Atom (Nativeint.to_string n)
-let sexp_of_nativeint__local n = exclave_ Atom (string_of_nativeint n)
+let sexp_of_nativeint__stack n = exclave_ Atom (string_of_nativeint n)
 let sexp_of_ref sexp_of__a rf = sexp_of__a !rf
-let sexp_of_ref__local sexp_of__a rf = exclave_ sexp_of__a !rf
+let sexp_of_ref__stack sexp_of__a rf = exclave_ sexp_of__a !rf
 let sexp_of_lazy_t sexp_of__a lv = sexp_of__a (Lazy.force lv)
-let sexp_of_lazy_t__local sexp_of__a lv = exclave_ sexp_of__a (lazy_force lv)
+let sexp_of_lazy_t__stack sexp_of__a lv = exclave_ sexp_of__a (lazy_force lv)
 
 let sexp_of_option sexp_of__a option =
   let write_old_option_format = Dynamic.get write_old_option_format in
@@ -155,7 +160,7 @@ let sexp_of_option sexp_of__a option =
   | None -> Atom "none"
 ;;
 
-let sexp_of_option__local sexp_of__a option =
+let sexp_of_option__stack sexp_of__a option =
   let write_old_option_format = Dynamic.get write_old_option_format in
   match option with
   | Some x when write_old_option_format -> exclave_ List [ sexp_of__a x ]
@@ -173,7 +178,7 @@ let sexp_of_or_null sexp_of__a or_null =
   | Null -> Atom "null"
 ;;
 
-let sexp_of_or_null__local sexp_of__a or_null =
+let sexp_of_or_null__stack sexp_of__a or_null =
   let write_old_option_format = Dynamic.get write_old_option_format in
   match or_null with
   | Or_null_shim.This x when write_old_option_format -> exclave_ List [ sexp_of__a x ]
@@ -189,7 +194,7 @@ let sexp_of_triple sexp_of__a sexp_of__b sexp_of__c (a, b, c) =
 ;;
 
 let sexp_of_list sexp_of__a lst = List (List.map lst ~f:sexp_of__a)
-let sexp_of_list__local sexp_of__a lst = exclave_ List (list_map__local sexp_of__a lst)
+let sexp_of_list__stack sexp_of__a lst = exclave_ List (list_map__stack sexp_of__a lst)
 
 let sexp_of_array sexp_of__a ar =
   let lst_ref = ref [] in
@@ -199,7 +204,7 @@ let sexp_of_array sexp_of__a ar =
   List !lst_ref
 ;;
 
-let sexp_of_array__local sexp_of__a ar = exclave_
+let sexp_of_array__stack sexp_of__a ar = exclave_
   let rec loop i acc = exclave_
     if i < 0 then List acc else loop (i - 1) (sexp_of__a (array_safe_get ar i) :: acc)
   in
@@ -238,12 +243,12 @@ module Exn_converter = struct
   module type The_exn_table = sig
     type key
 
-    val lock : key Capsule.Mutex.t
+    val lock : key Mutex.t
   end
 
   module The_exn_table : The_exn_table =
     (val let (Capsule.Key.P (type key) (key : key Capsule.Key.t)) = Capsule.create () in
-         let lock = Capsule.Mutex.create key in
+         let lock = Mutex.create key in
          (module struct
            type nonrec key = key
 
@@ -261,7 +266,7 @@ module Exn_converter = struct
     let extension_constructor =
       Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
     in
-    Capsule.Mutex.with_lock The_exn_table.lock ~f:(fun password ->
+    Mutex.with_lock The_exn_table.lock ~f:(fun password ->
       Capsule.Data.iter the_exn_table ~password ~f:(fun the_exn_table ->
         let extension_constructor =
           Portability_hacks.Cross.Contended.(cross extension_constructor)
@@ -279,7 +284,7 @@ module Exn_converter = struct
       Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
     in
     match
-      Capsule.Mutex.with_lock The_exn_table.lock ~f:(fun password ->
+      Mutex.with_lock The_exn_table.lock ~f:(fun password ->
         Capsule.Data.extract the_exn_table ~password ~f:(fun the_exn_table ->
           let extension_constructor =
             Portability_hacks.Cross.Contended.(cross extension_constructor)
@@ -300,7 +305,7 @@ module Exn_converter = struct
 
   module For_unit_tests_only = struct
     let size () =
-      Capsule.Mutex.with_lock The_exn_table.lock ~f:(fun password ->
+      Mutex.with_lock The_exn_table.lock ~f:(fun password ->
         Capsule.Data.extract the_exn_table ~password ~f:(fun the_exn_table ->
           (Exn_table.stats_alive the_exn_table).num_bindings))
     ;;
@@ -652,8 +657,13 @@ let () =
     ]
 ;;
 
-external ignore : (_[@local_opt]) -> unit @@ portable = "%ignore"
-external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%equal"
+external ignore : ('a : value_or_null). ('a[@local_opt]) -> unit @@ portable = "%ignore"
+
+external ( = )
+  : ('a : value_or_null).
+  ('a[@local_opt]) -> ('a[@local_opt]) -> bool
+  @@ portable
+  = "%equal"
 
 (* The compiler generates *catastrophically* bad code if you let it inline this function.
    But with that prevented, the compiler reliably optimizes this to a load from a
@@ -937,14 +947,14 @@ let[@inline always] sexp_of_char (char : char) =
   else fallback_sexp_of_char char [@tail]
 ;;
 
-let[@inline never] [@local never] [@specialise never] fallback_sexp_of_char__local
+let[@inline never] [@local never] [@specialise never] fallback_sexp_of_char__stack
   (char : char)
   = exclave_
   Atom ((string_make_local [@inlined never]) 1 char)
 ;;
 
-let[@inline always] sexp_of_char__local (char : char) = exclave_
+let[@inline always] sexp_of_char__stack (char : char) = exclave_
   if is_valid_char char
   then sexp_of_char_statically_allocated char
-  else fallback_sexp_of_char__local char
+  else fallback_sexp_of_char__stack char
 ;;

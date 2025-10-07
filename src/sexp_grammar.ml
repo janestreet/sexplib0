@@ -1,8 +1,8 @@
 include Sexp_grammar_intf.Definitions
 
-let coerce (type a b) ({ untyped = _ } as t : a t) : b t = t
+let coerce (type (a : any) (b : any)) ({ untyped = _ } as t : a t) : b t = t
 
-let tag (type a) ({ untyped = grammar } : a t) ~key ~value : a t =
+let tag (type a : any) ({ untyped = grammar } : a t) ~key ~value : a t =
   { untyped = Tagged { key; value; grammar } }
 ;;
 

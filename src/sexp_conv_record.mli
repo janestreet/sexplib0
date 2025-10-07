@@ -4,25 +4,13 @@ module Kind : sig
   (** A GADT specifying how to parse a record field. See documentation for
       [ppx_sexp_conv]. *)
   type (_, _) t =
-    | Default : (unit -> 'a) -> ('a, Sexp.t -> 'a) t
-    | Omit_nil : ('a, Sexp.t -> 'a) t
-    | Required : ('a, Sexp.t -> 'a) t
+    | Default : ('a : any). (unit -> 'a) -> (unit -> 'a, Sexp.t -> unit -> 'a) t
+    | Omit_nil : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
+    | Required : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
     | Sexp_array : ('a array, Sexp.t -> 'a) t
     | Sexp_bool : (bool, unit) t
     | Sexp_list : ('a list, Sexp.t -> 'a) t
     | Sexp_option : ('a option, Sexp.t -> 'a) t
-end
-
-(** Non-value fields must be stored as a closure [unit -> 'a] instead of as ['a] directly.
-    This is because we can't store non-value things in arbitrary records. This closure
-    involves some additional overhead not present in value fields.
-
-    Users use [@sexp.non_value] to mark a field as a non-value. This carries the extra
-    overhead explained above. *)
-module Layout_witness : sig
-  type _ t =
-    | Value : _ t
-    | Any : ('a : any). (unit -> 'a) t
 end
 
 module Fields : sig
@@ -33,7 +21,6 @@ module Fields : sig
     | Field :
         { name : string
         ; kind : ('a, 'conv) Kind.t
-        ; layout : 'a Layout_witness.t
         ; conv : 'conv
         ; rest : 'b t
         }

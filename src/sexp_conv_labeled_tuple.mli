@@ -5,13 +5,14 @@
    (https://github.com/ocaml-flambda/flambda-backend/). *)
 
 module Fields : sig
-  type _ t =
+  type (_ : any) t =
     | Field :
+        ('a : any) ('b : value).
         { name : string
-        ; conv : Sexp.t -> 'a
+        ; conv : Sexp.t -> (unit -> 'a)
         ; rest : 'b t
         }
-        -> ('a * 'b) t
+        -> ((unit -> 'a) * 'b) t
     | Empty : unit t
 end
 

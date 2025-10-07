@@ -33,45 +33,45 @@ val read_old_option_format : bool Dynamic.t
 val list_map : ('a -> 'b) -> 'a list -> 'b list
 
 (** As [list_map], but operating over locally-allocated values. *)
-val list_map__local : local_ (local_ 'a -> local_ 'b) -> local_ 'a list -> local_ 'b list
+val list_map__stack : local_ (local_ 'a -> local_ 'b) -> local_ 'a list -> local_ 'b list
 
 (** [sexp_of_unit ()] converts a value of type [unit] to an S-expression. *)
 val sexp_of_unit : unit -> Sexp.t
 
 (** As [sexp_of_unit], but returning a locally-allocated sexp. *)
-val sexp_of_unit__local : local_ unit -> local_ Sexp.t
+val sexp_of_unit__stack : local_ unit -> local_ Sexp.t
 
 (** [sexp_of_bool b] converts the value [x] of type [bool] to an S-expression. *)
 val sexp_of_bool : bool -> Sexp.t
 
 (** As [sexp_of_bool], but returning a locally-allocated sexp. *)
-val sexp_of_bool__local : local_ bool -> local_ Sexp.t
+val sexp_of_bool__stack : local_ bool -> local_ Sexp.t
 
 (** [sexp_of_string str] converts the value [str] of type [string] to an S-expression. *)
 val sexp_of_string : string -> Sexp.t
 
 (** As [sexp_of_string], but returning a locally-allocated sexp. *)
-val sexp_of_string__local : local_ string -> local_ Sexp.t
+val sexp_of_string__stack : local_ string -> local_ Sexp.t
 
 (** [sexp_of_bytes str] converts the value [str] of type [bytes] to an S-expression. *)
 val sexp_of_bytes : bytes -> Sexp.t
 
 (** As [sexp_of_bytes], but returning a locally-allocated sexp. *)
-val sexp_of_bytes__local : local_ bytes -> local_ Sexp.t
+val sexp_of_bytes__stack : local_ bytes -> local_ Sexp.t
 
 (** [sexp_of_char c] converts the value [c] of type [char] to an S-expression. *)
 val sexp_of_char : char -> Sexp.t
 
 (** As [sexp_of_char], but returning a locally-allocated sexp. Currently, the sexp will
     contain a one-character string which is heap-allocated. *)
-val sexp_of_char__local : local_ char -> local_ Sexp.t
+val sexp_of_char__stack : local_ char -> local_ Sexp.t
 
 (** [sexp_of_int n] converts the value [n] of type [int] to an S-expression. *)
 val sexp_of_int : int -> Sexp.t
 
 (** As [sexp_of_int], but returning a locally-allocated sexp. Currently, the sexp will
     contain a formatted string which is heap-allocated. *)
-val sexp_of_int__local : local_ int -> local_ Sexp.t
+val sexp_of_int__stack : local_ int -> local_ Sexp.t
 
 (** [sexp_of_float n] converts the value [n] of type [float] to an S-expression. *)
 val sexp_of_float : float -> Sexp.t
@@ -79,106 +79,107 @@ val sexp_of_float : float -> Sexp.t
 (** As [sexp_of_float], but returning a locally-allocated sexp. Currently, the float will
     be copied to the heap, and the sexp will contain a formatted string which is
     heap-allocated. *)
-val sexp_of_float__local : local_ float -> local_ Sexp.t
+val sexp_of_float__stack : local_ float -> local_ Sexp.t
 
 (** [sexp_of_int32 n] converts the value [n] of type [int32] to an S-expression. *)
 val sexp_of_int32 : int32 -> Sexp.t
 
 (** As [sexp_of_int32], but returning a locally-allocated sexp. Currently, the sexp will
     contain a formatted string which is heap-allocated. *)
-val sexp_of_int32__local : local_ int32 -> local_ Sexp.t
+val sexp_of_int32__stack : local_ int32 -> local_ Sexp.t
 
 (** [sexp_of_int64 n] converts the value [n] of type [int64] to an S-expression. *)
 val sexp_of_int64 : int64 -> Sexp.t
 
 (** As [sexp_of_int64], but returning a locally-allocated sexp. Currently, the sexp will
     contain a formatted string which is heap-allocated. *)
-val sexp_of_int64__local : local_ int64 -> local_ Sexp.t
+val sexp_of_int64__stack : local_ int64 -> local_ Sexp.t
 
 (** [sexp_of_nativeint n] converts the value [n] of type [nativeint] to an S-expression. *)
 val sexp_of_nativeint : nativeint -> Sexp.t
 
 (** As [sexp_of_nativeint], but returning a locally-allocated sexp. Currently, the sexp
     will contain a formatted string which is heap-allocated. *)
-val sexp_of_nativeint__local : local_ nativeint -> local_ Sexp.t
+val sexp_of_nativeint__stack : local_ nativeint -> local_ Sexp.t
 
 (** [sexp_of_ref conv r] converts the value [r] of type ['a ref] to an S-expression. Uses
     [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_ref : ('a -> Sexp.t) -> 'a ref -> Sexp.t
+val sexp_of_ref : ('a : value_or_null). ('a -> Sexp.t) -> 'a ref -> Sexp.t
 
 (** As [sexp_of_ref], but returning a locally-allocated sexp. *)
-val sexp_of_ref__local : (local_ 'a -> local_ Sexp.t) -> local_ 'a ref -> local_ Sexp.t
+val sexp_of_ref__stack
+  : ('a : value_or_null).
+  (local_ 'a -> local_ Sexp.t) -> local_ 'a ref -> local_ Sexp.t
 
 (** [sexp_of_lazy_t conv l] converts the value [l] of type ['a lazy_t] to an S-expression.
     Uses [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_lazy_t : ('a -> Sexp.t) -> 'a lazy_t -> Sexp.t
+val sexp_of_lazy_t : ('a : value). ('a -> Sexp.t) -> 'a lazy_t -> Sexp.t
 
 (** As [sexp_of_lazy_t], but returning a locally-allocated sexp. *)
-val sexp_of_lazy_t__local
-  :  (local_ 'a -> local_ Sexp.t)
-  -> local_ 'a lazy_t
-  -> local_ Sexp.t
+val sexp_of_lazy_t__stack
+  : ('a : value).
+  (local_ 'a -> local_ Sexp.t) -> local_ 'a lazy_t -> local_ Sexp.t
 
 (** [sexp_of_option conv opt] converts the value [opt] of type ['a option] to an
     S-expression. Uses [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_option : ('a -> Sexp.t) -> 'a option -> Sexp.t
+val sexp_of_option : ('a : value_or_null). ('a -> Sexp.t) -> 'a option -> Sexp.t
 
 (** As [sexp_of_option], but returning a locally-allocated sexp. *)
-val sexp_of_option__local
-  :  (local_ 'a -> local_ Sexp.t)
-  -> local_ 'a option
-  -> local_ Sexp.t
+val sexp_of_option__stack
+  : ('a : value_or_null).
+  (local_ 'a -> local_ Sexp.t) -> local_ 'a option -> local_ Sexp.t
 
 (** [sexp_of_or_null conv orn] converts the value [orn] of type ['a or_null] to an
     S-expression. Uses [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_or_null : ('a -> Sexp.t) -> 'a Or_null_shim.t -> Sexp.t
+val sexp_of_or_null : ('a : value). ('a -> Sexp.t) -> 'a Or_null_shim.t -> Sexp.t
 
 (** As [sexp_of_or_null], but returning a locally-allocated sexp. *)
-val sexp_of_or_null__local
-  :  (local_ 'a -> local_ Sexp.t)
-  -> local_ 'a Or_null_shim.t
-  -> local_ Sexp.t
+val sexp_of_or_null__stack
+  : ('a : value).
+  (local_ 'a -> local_ Sexp.t) -> local_ 'a Or_null_shim.t -> local_ Sexp.t
 
 (** [sexp_of_pair conv1 conv2 pair] converts a pair to an S-expression. It uses its first
     argument to convert the first element of the pair, and its second argument to convert
     the second element of the pair. *)
-val sexp_of_pair : ('a -> Sexp.t) -> ('b -> Sexp.t) -> 'a * 'b -> Sexp.t
+val sexp_of_pair
+  : ('a : value_or_null) ('b : value_or_null).
+  ('a -> Sexp.t) -> ('b -> Sexp.t) -> 'a * 'b -> Sexp.t
 
 (** [sexp_of_triple conv1 conv2 conv3 triple] converts a triple to an S-expression using
     [conv1], [conv2], and [conv3] to convert its elements. *)
 val sexp_of_triple
-  :  ('a -> Sexp.t)
-  -> ('b -> Sexp.t)
-  -> ('c -> Sexp.t)
-  -> 'a * 'b * 'c
-  -> Sexp.t
+  : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
+  ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> 'a * 'b * 'c -> Sexp.t
 
 (** [sexp_of_list conv lst] converts the value [lst] of type ['a list] to an S-expression.
     Uses [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_list : ('a -> Sexp.t) -> 'a list -> Sexp.t
+val sexp_of_list : ('a : value_or_null). ('a -> Sexp.t) -> 'a list -> Sexp.t
 
 (** As [sexp_of_list], but returning a locally-allocated sexp. *)
-val sexp_of_list__local : (local_ 'a -> local_ Sexp.t) -> local_ 'a list -> local_ Sexp.t
+val sexp_of_list__stack
+  : ('a : value_or_null).
+  (local_ 'a -> local_ Sexp.t) -> local_ 'a list -> local_ Sexp.t
 
 (** [sexp_of_array conv ar] converts the value [ar] of type ['a array] to an S-expression.
     Uses [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_array : ('a -> Sexp.t) -> 'a array -> Sexp.t
+val sexp_of_array : ('a : value). ('a -> Sexp.t) -> 'a array -> Sexp.t
 
 (** As [sexp_of_array], but returning a locally-allocated sexp. *)
-val sexp_of_array__local
-  :  (local_ 'a -> local_ Sexp.t)
-  -> local_ 'a array
-  -> local_ Sexp.t
+val sexp_of_array__stack
+  : ('a : value).
+  (local_ 'a -> local_ Sexp.t) -> local_ 'a array -> local_ Sexp.t
 
 (** [sexp_of_hashtbl conv_key conv_value htbl] converts the value [htbl] of type
     [('a, 'b) Hashtbl.t] to an S-expression. Uses [conv_key] to convert the hashtable keys
     of type ['a], and [conv_value] to convert hashtable values of type ['b] to
     S-expressions. *)
-val sexp_of_hashtbl : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) Hashtbl.t -> Sexp.t
+val sexp_of_hashtbl
+  : ('a : value) ('b : value).
+  ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) Hashtbl.t -> Sexp.t
 
 (** [sexp_of_opaque x] converts the value [x] of opaque type to an S-expression. This
     means the user need not provide converters, but the result cannot be interpreted. *)
-val sexp_of_opaque : local_ 'a @ contended -> Sexp.t
+val sexp_of_opaque : ('a : value_or_null). local_ 'a @ contended -> Sexp.t
 
 (** [sexp_of_fun f] converts the value [f] of function type to a dummy S-expression.
     Functions cannot be serialized as S-expressions, but at least a placeholder can be
@@ -235,53 +236,54 @@ val nativeint_of_sexp : Sexp.t -> nativeint
 
 (** [ref_of_sexp conv sexp] converts S-expression [sexp] to a value of type ['a ref] using
     conversion function [conv], which converts an S-expression to a value of type ['a]. *)
-val ref_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a ref
+val ref_of_sexp : ('a : value_or_null). (Sexp.t -> 'a) -> Sexp.t -> 'a ref
 
 (** [lazy_t_of_sexp conv sexp] converts S-expression [sexp] to a value of type ['a lazy_t]
     using conversion function [conv], which converts an S-expression to a value of type
     ['a]. *)
-val lazy_t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a lazy_t
+val lazy_t_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a lazy_t
 
 (** [option_of_sexp conv sexp] converts S-expression [sexp] to a value of type ['a option]
     using conversion function [conv], which converts an S-expression to a value of type
     ['a]. *)
-val option_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a option
+val option_of_sexp : ('a : value_or_null). (Sexp.t -> 'a) -> Sexp.t -> 'a option
 
 (** [option_of_sexp conv sexp] converts S-expression [sexp] to a value of type
     ['a or_null] using conversion function [conv], which converts an S-expression to a
     value of type ['a]. *)
-val or_null_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a Or_null_shim.t
+val or_null_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a Or_null_shim.t
 
 (** [pair_of_sexp conv1 conv2 sexp] converts S-expression [sexp] to a pair of type
     ['a * 'b] using conversion functions [conv1] and [conv2], which convert S-expressions
     to values of type ['a] and ['b] respectively. *)
-val pair_of_sexp : (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> 'a * 'b
+val pair_of_sexp
+  : ('a : value_or_null) ('b : value_or_null).
+  (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> 'a * 'b
 
 (** [triple_of_sexp conv1 conv2 conv3 sexp] converts S-expression [sexp] to a triple of
     type ['a * 'b * 'c] using conversion functions [conv1], [conv2], and [conv3], which
     convert S-expressions to values of type ['a], ['b], and ['c] respectively. *)
 val triple_of_sexp
-  :  (Sexp.t -> 'a)
-  -> (Sexp.t -> 'b)
-  -> (Sexp.t -> 'c)
-  -> Sexp.t
-  -> 'a * 'b * 'c
+  : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
+  (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> 'a * 'b * 'c
 
 (** [list_of_sexp conv sexp] converts S-expression [sexp] to a value of type ['a list]
     using conversion function [conv], which converts an S-expression to a value of type
     ['a]. *)
-val list_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a list
+val list_of_sexp : ('a : value_or_null). (Sexp.t -> 'a) -> Sexp.t -> 'a list
 
 (** [array_of_sexp conv sexp] converts S-expression [sexp] to a value of type ['a array]
     using conversion function [conv], which converts an S-expression to a value of type
     ['a]. *)
-val array_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a array
+val array_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a array
 
 (** [hashtbl_of_sexp conv_key conv_value sexp] converts S-expression [sexp] to a value of
     type [('a, 'b) Hashtbl.t] using conversion function [conv_key], which converts an
     S-expression to hashtable key of type ['a], and function [conv_value], which converts
     an S-expression to hashtable value of type ['b]. *)
-val hashtbl_of_sexp : (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) Hashtbl.t
+val hashtbl_of_sexp
+  : ('a : value) ('b : value).
+  (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) Hashtbl.t
 
 (** [opaque_of_sexp sexp]
     @raise Of_sexp_error when attempting to convert an S-expression to an opaque value. *)
@@ -317,7 +319,7 @@ val printexc_prefer_sexp : exn -> string
     converter is found, [None] is returned instead. *)
 val sexp_of_exn_opt : exn -> Sexp.t option
 
-module (Exn_converter @ nonportable) : sig
+module (Exn_converter @@ nonportable) : sig
   (** [add constructor sexp_of_exn] registers exception S-expression converter
       [sexp_of_exn] for exceptions with the given [constructor].
 
@@ -337,5 +339,9 @@ end
 (**/**)
 
 (*_ For the syntax extension *)
-external ignore : (_[@local_opt]) -> unit = "%ignore"
-external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
+external ignore : ('a : value_or_null). ('a[@local_opt]) -> unit = "%ignore"
+
+external ( = )
+  : ('a : value_or_null).
+  ('a[@local_opt]) -> ('a[@local_opt]) -> bool
+  = "%equal"
