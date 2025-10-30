@@ -9,6 +9,7 @@ module Kind : sig
     | Sexp_bool : (bool, unit) t
     | Sexp_list : ('a list, Sexp.t -> 'a) t
     | Sexp_option : ('a option, Sexp.t -> 'a) t
+    | Sexp_or_null : ('a Basement.Or_null_shim.t, Sexp.t -> 'a) t
 end
 
 module Fields : sig
@@ -17,6 +18,7 @@ module Fields : sig
   type _ t =
     | Empty : unit t
     | Field :
+        'a 'b 'conv.
         { name : string
         ; kind : ('a, 'conv) Kind.t
         ; conv : 'conv

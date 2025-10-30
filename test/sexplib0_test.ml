@@ -282,6 +282,7 @@ let%expect_test "record with sexp types" =
       ; b : int list
       ; c : int array
       ; d : bool
+      ; e : int Or_null.t
       }
     [@@deriving equal, sexp_of]
 
@@ -305,7 +306,17 @@ let%expect_test "record with sexp types" =
                          ; conv = int_of_sexp
                          ; rest =
                              Field
-                               { name = "d"; kind = Sexp_bool; conv = (); rest = Empty }
+                               { name = "d"
+                               ; kind = Sexp_bool
+                               ; conv = ()
+                               ; rest =
+                                   Field
+                                     { name = "e"
+                                     ; kind = Sexp_or_null
+                                     ; conv = int_of_sexp
+                                     ; rest = Empty
+                                     }
+                               }
                          }
                    }
              })
@@ -314,43 +325,44 @@ let%expect_test "record with sexp types" =
           | "b" -> 1
           | "c" -> 2
           | "d" -> 3
+          | "e" -> 4
           | _ -> -1)
         ~allow_extra_fields:false
-        ~create:(fun (a, (b, (c, (d, ())))) -> { a; b; c; d })
+        ~create:(fun (a, (b, (c, (d, (e, ()))))) -> { a; b; c; d; e })
     ;;
   end
   in
   let test = test (module M) in
   (* in order *)
   test "((a 1) (b (2 3)) (c (4 5)) (d))";
-  [%expect {| (Ok ((a (1)) (b (2 3)) (c (4 5)) (d true))) |}];
+  [%expect {| (Ok ((a (1)) (b (2 3)) (c (4 5)) (d true) (e ()))) |}];
   (* reverse order *)
   test "((d) (c ()) (b ()) (a 1))";
-  [%expect {| (Ok ((a (1)) (b ()) (c ()) (d true))) |}];
+  [%expect {| (Ok ((a (1)) (b ()) (c ()) (d true) (e ()))) |}];
   (* missing field d *)
   test "((a 1) (b (2 3)) (c (4 5)))";
-  [%expect {| (Ok ((a (1)) (b (2 3)) (c (4 5)) (d false))) |}];
+  [%expect {| (Ok ((a (1)) (b (2 3)) (c (4 5)) (d false) (e ()))) |}];
   (* missing field c *)
   test "((a 1) (b (2 3)) (d))";
-  [%expect {| (Ok ((a (1)) (b (2 3)) (c ()) (d true))) |}];
+  [%expect {| (Ok ((a (1)) (b (2 3)) (c ()) (d true) (e ()))) |}];
   (* missing field b *)
   test "((a 1) (c (2 3)) (d))";
-  [%expect {| (Ok ((a (1)) (b ()) (c (2 3)) (d true))) |}];
+  [%expect {| (Ok ((a (1)) (b ()) (c (2 3)) (d true) (e ()))) |}];
   (* missing field a *)
   test "((b (1 2)) (c (3 4)) (d))";
-  [%expect {| (Ok ((a ()) (b (1 2)) (c (3 4)) (d true))) |}];
+  [%expect {| (Ok ((a ()) (b (1 2)) (c (3 4)) (d true) (e ()))) |}];
   (* extra field *)
-  test "((a 1) (b (2 3)) (c (4 5)) (d) (e (6 7)))";
+  test "((a 1) (b (2 3)) (c (4 5)) (d) (e 6) (f (7 8)))";
   [%expect
     {|
     (Error
      (Of_sexp_error
-      "M.t_of_sexp: extra fields: e"
-      (invalid_sexp ((a 1) (b (2 3)) (c (4 5)) (d) (e (6 7))))))
+      "M.t_of_sexp: extra fields: f"
+      (invalid_sexp ((a 1) (b (2 3)) (c (4 5)) (d) (e 6) (f (7 8))))))
     |}];
   (* all fields missing *)
   test "()";
-  [%expect {| (Ok ((a ()) (b ()) (c ()) (d false))) |}];
+  [%expect {| (Ok ((a ()) (b ()) (c ()) (d false) (e ()))) |}];
   ()
 ;;
 
