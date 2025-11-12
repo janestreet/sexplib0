@@ -3,7 +3,7 @@
 module Kind : sig
   (** A GADT specifying how to parse a record field. See documentation for
       [ppx_sexp_conv]. *)
-  type (_, _) t =
+  type (_ : value_or_null, _) t =
     | Default : ('a : any). (unit -> 'a) -> (unit -> 'a, Sexp.t -> unit -> 'a) t
     | Omit_nil : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
     | Required : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
@@ -11,6 +11,7 @@ module Kind : sig
     | Sexp_bool : (bool, unit) t
     | Sexp_list : ('a list, Sexp.t -> 'a) t
     | Sexp_option : ('a option, Sexp.t -> 'a) t
+    | Sexp_or_null : ('a Basement.Or_null_shim.t, Sexp.t -> 'a) t
 end
 
 module Fields : sig
@@ -19,6 +20,7 @@ module Fields : sig
   type _ t =
     | Empty : unit t
     | Field :
+        ('a : value_or_null) 'b 'conv.
         { name : string
         ; kind : ('a, 'conv) Kind.t
         ; conv : 'conv

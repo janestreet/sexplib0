@@ -1,5 +1,5 @@
 (library
  (name sexplib0_bench)
- (libraries parsexp sexplib0)
+ (libraries basement parsexp sexplib0)
  (preprocess
   (pps ppx_bench)))

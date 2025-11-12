@@ -180,7 +180,7 @@ module Definitions = struct
   type (_ : any) t : value mod contended portable = { untyped : grammar } [@@unboxed]
 end
 
-module type Sexp_grammar = sig @@ portable
+module type Sexp_grammar = sig @@ stateless
   include module type of struct
     include Definitions
   end

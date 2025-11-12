@@ -1,5 +1,7 @@
 open Sexplib0.Sexp_conv
 
+type 'a or_null = 'a Basement.Or_null_shim.t
+
 let bench_t_of_sexp ~t_of_sexp string =
   let sexp = Sys.opaque_identity (Parsexp.Single.parse_string_exn string) in
   fun () -> t_of_sexp sexp
@@ -14,6 +16,7 @@ type t =
   ; f : int option
   ; g : int
   ; h : 'a. 'a list
+  ; i : int or_null
   }
 
 let t_of_sexp =
@@ -28,7 +31,7 @@ let t_of_sexp =
          ; kind = Required
          ; conv =
              (fun sexp ->
-               let value = int_of_sexp sexp in
+               let value = (int_of_sexp [@inlined never]) sexp in
                fun () -> value)
          ; rest =
              Field
@@ -36,7 +39,7 @@ let t_of_sexp =
                ; kind = Omit_nil
                ; conv =
                    (fun sexp ->
-                     let value = option_of_sexp int_of_sexp sexp in
+                     let value = (option_of_sexp int_of_sexp [@inlined never]) sexp in
                      fun () -> value)
                ; rest =
                    Field
@@ -64,7 +67,9 @@ let t_of_sexp =
                                              ; kind = Default (fun () -> 0)
                                              ; conv =
                                                  (fun sexp ->
-                                                   let value = int_of_sexp sexp in
+                                                   let value =
+                                                     (int_of_sexp [@inlined never]) sexp
+                                                   in
                                                    fun () -> value)
                                              ; rest =
                                                  Field
@@ -82,7 +87,13 @@ let t_of_sexp =
                                                            }
                                                          in
                                                          fun () -> value)
-                                                   ; rest = Empty
+                                                   ; rest =
+                                                       Field
+                                                         { name = "i"
+                                                         ; kind = Sexp_or_null
+                                                         ; conv = int_of_sexp
+                                                         ; rest = Empty
+                                                         }
                                                    }
                                              }
                                        }
@@ -100,22 +111,27 @@ let t_of_sexp =
       | "f" -> 5
       | "g" -> 6
       | "h" -> 7
+      | "i" -> 8
       | _ -> -1)
     ~allow_extra_fields:false
-    ~create:(fun (a, (b, (c, (d, (e, (f, (g, (h, ())))))))) ->
+    ~create:(fun (a, (b, (c, (d, (e, (f, (g, (h, (i, ()))))))))) ->
       let a = a () in
       let b = b () in
       let g = g () in
       let { h } = h () in
-      { a; b; c; d; e; f; g; h })
+      { a; b; c; d; e; f; g; h; i })
 ;;
 
 let%bench_fun "t_of_sexp, full, in order" =
-  bench_t_of_sexp ~t_of_sexp "((a 1) (b (2)) (c) (d (3 4)) (e (5 6)) (f 7) (g 8) (h ()))"
+  bench_t_of_sexp
+    ~t_of_sexp
+    "((a 1) (b (2)) (c) (d (3 4)) (e (5 6)) (f 7) (g 8) (h ()) (i 9))"
 ;;
 
 let%bench_fun "t_of_sexp, full, reverse order" =
-  bench_t_of_sexp ~t_of_sexp "((h ()) (g 8) (f 7) (e (5 6)) (d (3 4)) (c) (b (2)) (a 1))"
+  bench_t_of_sexp
+    ~t_of_sexp
+    "((i 9) (h ()) (g 8) (f 7) (e (5 6)) (d (3 4)) (c) (b (2)) (a 1))"
 ;;
 
 let%bench_fun "t_of_sexp, empty" = bench_t_of_sexp ~t_of_sexp "((a 0) (h ()))"

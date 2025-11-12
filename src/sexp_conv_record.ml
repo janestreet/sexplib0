@@ -4,7 +4,7 @@ open Sexp_conv
 open Sexp_conv_error
 
 module Kind = struct
-  type (_, _) t =
+  type (_ : value_or_null, _) t =
     | Default : ('a : any). (unit -> 'a) -> (unit -> 'a, Sexp.t -> unit -> 'a) t
     | Omit_nil : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
     | Required : ('a : any). (unit -> 'a, Sexp.t -> unit -> 'a) t
@@ -12,12 +12,14 @@ module Kind = struct
     | Sexp_bool : (bool, unit) t
     | Sexp_list : ('a list, Sexp.t -> 'a) t
     | Sexp_option : ('a option, Sexp.t -> 'a) t
+    | Sexp_or_null : ('a Or_null_shim.t, Sexp.t -> 'a) t
 end
 
 module Fields = struct
   type _ t =
     | Empty : unit t
     | Field :
+        ('a : value_or_null) 'b 'conv.
         { name : string
         ; kind : ('a, 'conv) Kind.t
         ; conv : 'conv
@@ -96,7 +98,8 @@ end
 (* Parsing field values from state. *)
 
 let rec parse_value_malformed
-  : type a b. Malformed.t -> fields:(a * b) Fields.t -> state:State.t -> pos:int -> a
+  : type (a : value_or_null) b.
+    Malformed.t -> fields:(a * b) Fields.t -> state:State.t -> pos:int -> a
   =
   fun malformed ~fields ~state ~pos ->
   let (Field field) = fields in
@@ -108,7 +111,8 @@ let rec parse_value_malformed
   raise (Malformed malformed)
 
 and[@tail_mod_cons] parse_value
-  : type a b. fields:(a * b) Fields.t -> state:State.t -> pos:int -> a * b
+  : type (a : value_or_null) b.
+    fields:(a * b) Fields.t -> state:State.t -> pos:int -> a * b
   =
   fun ~fields ~state ~pos ->
   let (Field { name; kind; conv; rest }) = fields in
@@ -119,14 +123,27 @@ and[@tail_mod_cons] parse_value
     | Default _, List [ _; sexp ] -> conv sexp
     | Omit_nil, List [ _; sexp ] -> conv sexp
     | Sexp_option, List [ _; sexp ] -> Some (conv sexp)
+    | Sexp_or_null, List [ _; sexp ] -> This (conv sexp)
     | Sexp_list, List [ _; sexp ] -> list_of_sexp conv sexp
     | Sexp_array, List [ _; sexp ] -> array_of_sexp conv sexp
     | Sexp_bool, List [ _ ] -> true
     (* ill-formed *)
-    | ( (Required | Default _ | Omit_nil | Sexp_option | Sexp_list | Sexp_array)
+    | ( ( Required
+        | Default _
+        | Omit_nil
+        | Sexp_option
+        | Sexp_or_null
+        | Sexp_list
+        | Sexp_array )
       , (List (_ :: _ :: _ :: _) as sexp) ) ->
       parse_value_malformed (Non_pair (Some sexp)) ~fields ~state ~pos
-    | ( (Required | Default _ | Omit_nil | Sexp_option | Sexp_list | Sexp_array)
+    | ( ( Required
+        | Default _
+        | Omit_nil
+        | Sexp_option
+        | Sexp_or_null
+        | Sexp_list
+        | Sexp_array )
       , List ([] | [ _ ]) ) -> parse_value_malformed (Non_pair None) ~fields ~state ~pos
     | Sexp_bool, List ([] | _ :: _ :: _) ->
       parse_value_malformed Bool_payload ~fields ~state ~pos
@@ -136,6 +153,7 @@ and[@tail_mod_cons] parse_value
     | Default default, Atom _ -> default
     | Omit_nil, Atom _ -> conv (List [])
     | Sexp_option, Atom _ -> None
+    | Sexp_or_null, Atom _ -> Null
     | Sexp_list, Atom _ -> []
     | Sexp_array, Atom _ -> [||]
     | Sexp_bool, Atom _ -> false
@@ -230,7 +248,7 @@ let parse_record_slow ~fields ~index ~extra ~seen sexps =
    declared. Falls back on slow path if any fields are absent, reordered, or malformed. *)
 
 let[@tail_mod_cons] rec parse_field_fast
-  : type a b.
+  : type (a : value_or_null) b.
     fields:(a * b) Fields.t
     -> index:(string -> int)
     -> extra:bool
@@ -251,6 +269,9 @@ let[@tail_mod_cons] rec parse_field_fast
        conv sexp, parse_spine_fast ~fields:rest ~index ~extra ~seen:(seen + 1) others
      | Sexp_option, [ sexp ] ->
        ( Some (conv sexp)
+       , parse_spine_fast ~fields:rest ~index ~extra ~seen:(seen + 1) others )
+     | Sexp_or_null, [ sexp ] ->
+       ( This (conv sexp)
        , parse_spine_fast ~fields:rest ~index ~extra ~seen:(seen + 1) others )
      | Sexp_list, [ sexp ] ->
        ( list_of_sexp conv sexp
