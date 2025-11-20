@@ -1,5 +1,4 @@
-(* Conv_error: Module for Handling Errors during Automated S-expression
-   Conversions *)
+(* Conv_error: Module for Handling Errors during Automated S-expression Conversions *)
 
 open StdLabels
 open Printf

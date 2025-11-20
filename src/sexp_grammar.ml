@@ -1,4 +1,4 @@
-include Sexp_grammar_intf.Definitions
+include Sexp_grammar_type.Sexp_grammar
 
 let coerce (type (a : any) (b : any)) ({ untyped = _ } as t : a t) : b t = t
 

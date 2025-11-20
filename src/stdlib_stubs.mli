@@ -40,7 +40,5 @@ module String : sig
     include String
   end
 
-  external length : (string[@local_opt]) -> int = "%string_length"
-  external get : (string[@local_opt]) -> int -> char = "%string_safe_get"
-  external unsafe_get : (string[@local_opt]) -> int -> char = "%string_unsafe_get"
+  val index_from_opt : string @ local -> int -> char -> int option
 end

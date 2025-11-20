@@ -1,6 +1,6 @@
 (library
  (name sexplib0)
  (public_name sexplib0)
- (libraries basement)
+ (libraries basement sexp_type.grammar sexp_type)
  (preprocess no_preprocessing)
  (ocamlopt_flags :standard -O3))

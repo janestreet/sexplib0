@@ -162,11 +162,13 @@ val sexp_of_list__stack
 
 (** [sexp_of_array conv ar] converts the value [ar] of type ['a array] to an S-expression.
     Uses [conv] to convert values of type ['a] to an S-expression. *)
-val sexp_of_array : ('a : value). ('a -> Sexp.t) -> 'a array -> Sexp.t
+val sexp_of_array
+  : ('a : value_or_null mod separable).
+  ('a -> Sexp.t) -> 'a array -> Sexp.t
 
 (** As [sexp_of_array], but returning a locally-allocated sexp. *)
 val sexp_of_array__stack
-  : ('a : value).
+  : ('a : value_or_null mod separable).
   (local_ 'a -> local_ Sexp.t) -> local_ 'a array -> local_ Sexp.t
 
 (** [sexp_of_hashtbl conv_key conv_value htbl] converts the value [htbl] of type
@@ -275,7 +277,9 @@ val list_of_sexp : ('a : value_or_null). (Sexp.t -> 'a) -> Sexp.t -> 'a list
 (** [array_of_sexp conv sexp] converts S-expression [sexp] to a value of type ['a array]
     using conversion function [conv], which converts an S-expression to a value of type
     ['a]. *)
-val array_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a array
+val array_of_sexp
+  : ('a : value_or_null mod separable).
+  (Sexp.t -> 'a) -> Sexp.t -> 'a array
 
 (** [hashtbl_of_sexp conv_key conv_value sexp] converts S-expression [sexp] to a value of
     type [('a, 'b) Hashtbl.t] using conversion function [conv_key], which converts an

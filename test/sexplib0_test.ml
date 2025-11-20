@@ -549,18 +549,27 @@ let%expect_test "simple [to_string__stack] test" =
   (Sexp.to_string [@alloc stack]) sexp |> print_local;
   [%expect {| (atom-at-0(atom-at-1-a atom-at-1-b)) |}];
   (Sexp.to_string_mach [@alloc stack]) sexp |> print_local;
-  [%expect {| (atom-at-0(atom-at-1-a atom-at-1-b)) |}]
+  [%expect {| (atom-at-0(atom-at-1-a atom-at-1-b)) |}];
+  (Sexp.to_string_hum [@alloc stack]) sexp |> print_local;
+  [%expect {| (atom-at-0 (atom-at-1-a atom-at-1-b)) |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "round-trip [__stack] versions of [to_string]" =
   Base_quickcheck.Test.run_exn
     (module struct
-      include Sexp
+      open Base_quickcheck
 
-      let quickcheck_generator = Base_quickcheck.Generator.sexp
-      let quickcheck_shrinker = Base_quickcheck.Shrinker.sexp
+      module Sexp = struct
+        include Sexp
+
+        let quickcheck_generator = Generator.sexp
+        let quickcheck_shrinker = Shrinker.sexp
+      end
+
+      type t = Sexp.t * int option * int option
+      [@@deriving quickcheck ~generator ~shrinker, sexp_of]
     end)
-    ~f:(fun sexp ->
+    ~f:(fun (sexp, indent, max_width) ->
       let str = Sexp.to_string sexp in
       let stack_allocated_str =
         (Sexp.to_string [@alloc stack]) sexp |> String.globalize
@@ -570,42 +579,47 @@ let%expect_test _ =
       let stack_allocated_str_mach =
         (Sexp.to_string_mach [@alloc stack]) sexp |> String.globalize
       in
-      require_equal (module String) str_mach stack_allocated_str_mach)
+      require_equal (module String) str_mach stack_allocated_str_mach;
+      let str_hum = Sexp.to_string_hum ?indent ?max_width sexp in
+      let stack_allocated_str_hum =
+        (Sexp.to_string_hum [@alloc stack]) ?indent ?max_width sexp |> String.globalize
+      in
+      require_equal (module String) str_hum stack_allocated_str_hum)
 ;;
 
 (* Assert that the module types defined by sexplib0 are equivalent to those derived by
    ppx_sexp_conv. *)
 module _ = struct
   module type S = sig
-    type t [@@deriving sexp]
+    type t : any [@@deriving sexp]
   end
 
   module type S1 = sig
-    type 'a t [@@deriving sexp]
+    type 'a t : any [@@deriving sexp]
   end
 
   module type S2 = sig
-    type ('a, 'b) t [@@deriving sexp]
+    type ('a, 'b) t : any [@@deriving sexp]
   end
 
   module type S3 = sig
-    type ('a, 'b, 'c) t [@@deriving sexp]
+    type ('a, 'b, 'c) t : any [@@deriving sexp]
   end
 
   module type S_with_grammar = sig
-    type t [@@deriving sexp, sexp_grammar]
+    type t : any [@@deriving sexp, sexp_grammar]
   end
 
   module type S1_with_grammar = sig
-    type 'a t [@@deriving sexp, sexp_grammar]
+    type 'a t : any [@@deriving sexp, sexp_grammar]
   end
 
   module type S2_with_grammar = sig
-    type ('a, 'b) t [@@deriving sexp, sexp_grammar]
+    type ('a, 'b) t : any [@@deriving sexp, sexp_grammar]
   end
 
   module type S3_with_grammar = sig
-    type ('a, 'b, 'c) t [@@deriving sexp, sexp_grammar]
+    type ('a, 'b, 'c) t : any [@@deriving sexp, sexp_grammar]
   end
 
   let (T : ((module Sexpable.S), (module S)) Type_equal.t) = T
@@ -631,10 +645,7 @@ module%test Illegal_chars = struct
     List.init num_tests ~f:(( + ) start)
     |> List.iter ~f:(fun (c : int) ->
       let c : char = Stdlib.Obj.magic c in
-      Expect_test_helpers_base.require_equal
-        (module Sexp)
-        (sexp_of_char c)
-        (sexp_of_char' c))
+      require_equal (module Sexp) (sexp_of_char c) (sexp_of_char' c))
   ;;
 
   let%expect_test _ =

@@ -46,18 +46,17 @@ module Printing = struct
 
   let index_of_newline str start = String.index_from_opt str start '\n'
 
-  (* The maximum size of a thing on the minor heap is 256 words.
-       Previously, this size of the returned buffer here was 4096 bytes, which
-       caused the Buffer to be allocated on the *major* heap every time.
+  (* The maximum size of a thing on the minor heap is 256 words. Previously, this size of
+     the returned buffer here was 4096 bytes, which caused the Buffer to be allocated on
+     the *major* heap every time.
 
-       According to a simple benchmark by Ron, we can improve performance for
-       small s-expressions by a factor of ~4 if we only allocate 1024 bytes
-       (128 words + some small overhead) worth of buffer initially.  And one
-       can argue that if it's free to allocate strings smaller than 256 words,
-       large s-expressions requiring larger expensive buffers won't notice
-       the extra two doublings from 1024 bytes to 2048 and 4096. And especially
-       performance-sensitive applications to always pass in a larger buffer to
-       use. *)
+     According to a simple benchmark by Ron, we can improve performance for small
+     s-expressions by a factor of ~4 if we only allocate 1024 bytes (128 words + some
+     small overhead) worth of buffer initially. And one can argue that if it's free to
+     allocate strings smaller than 256 words, large s-expressions requiring larger
+     expensive buffers won't notice the extra two doublings from 1024 bytes to 2048
+     and 4096. And especially performance-sensitive applications to always pass in a
+     larger buffer to use. *)
   let buffer () = Buffer.create 1024
 
   [@@@expand_inline
@@ -89,17 +88,42 @@ module Printing = struct
       ignore (loop false sexp)
     ;;
 
+    let bytes_of_buffer buf =
+      (let len = Buffer.length buf in
+       let bytes = (Bytes.create [@alloc a]) len in
+       Buffer.blit buf 0 bytes 0 len;
+       Bytes.unsafe_to_string bytes)
+      [@exclave_if_stack a]
+    ;;
+
     let to_string_mach_internal t ~mach_maybe_esc_str =
       match t with
       | Atom str -> mach_maybe_esc_str str [@exclave_if_stack a]
       | sexp ->
         (let buf = buffer () in
          (to_buffer_mach_internal [@alloc a]) ~buf sexp ~mach_maybe_esc_str;
-         let len = Buffer.length buf in
-         let bytes = (Bytes.create [@alloc a]) len in
-         Buffer.blit buf 0 bytes 0 len;
-         Bytes.unsafe_to_string bytes)
+         (bytes_of_buffer [@alloc a]) buf)
         [@exclave_if_stack a]
+    ;;
+
+    let to_string_hum_internal
+      ?indent
+      ?max_width
+      sexp
+      ~mach_maybe_esc_str
+      ~maybe_globalize
+      ~to_buffer_hum
+      =
+      match[@exclave_if_stack a] sexp with
+      | Atom str
+        when match index_of_newline str 0 with
+             | None -> true
+             | Some _ -> false -> mach_maybe_esc_str str
+      | sexp ->
+        let sexp = maybe_globalize sexp in
+        let buf = buffer () in
+        to_buffer_hum ~buf ?indent ?max_width sexp;
+        (bytes_of_buffer [@alloc a]) buf
     ;;]]
 
   include struct
@@ -128,6 +152,13 @@ module Printing = struct
       ignore (loop false sexp)
     ;;
 
+    let bytes_of_buffer__stack buf = exclave_
+      let len = Buffer.length buf in
+      let bytes = Bytes.create__stack len in
+      Buffer.blit buf 0 bytes 0 len;
+      Bytes.unsafe_to_string bytes
+    ;;
+
     let to_string_mach_internal__stack t ~mach_maybe_esc_str =
       match t with
       | Atom str -> exclave_ mach_maybe_esc_str str
@@ -135,10 +166,27 @@ module Printing = struct
         exclave_
         let buf = buffer () in
         to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str;
-        let len = Buffer.length buf in
-        let bytes = Bytes.create__stack len in
-        Buffer.blit buf 0 bytes 0 len;
-        Bytes.unsafe_to_string bytes
+        bytes_of_buffer__stack buf
+    ;;
+
+    let to_string_hum_internal__stack
+      ?indent
+      ?max_width
+      sexp
+      ~mach_maybe_esc_str
+      ~maybe_globalize
+      ~to_buffer_hum
+      = exclave_
+      match sexp with
+      | Atom str
+        when match index_of_newline str 0 with
+             | None -> true
+             | Some _ -> false -> mach_maybe_esc_str str
+      | sexp ->
+        let sexp = maybe_globalize sexp in
+        let buf = buffer () in
+        to_buffer_hum ~buf ?indent ?max_width sexp;
+        bytes_of_buffer__stack buf
     ;;
   end [@@ocaml.doc " @inline "]
 
@@ -168,16 +216,40 @@ module Printing = struct
       ignore (loop false sexp)
     ;;
 
+    let bytes_of_buffer buf =
+      let len = Buffer.length buf in
+      let bytes = Bytes.create len in
+      Buffer.blit buf 0 bytes 0 len;
+      Bytes.unsafe_to_string bytes
+    ;;
+
     let to_string_mach_internal t ~mach_maybe_esc_str =
       match t with
       | Atom str -> mach_maybe_esc_str str
       | sexp ->
         let buf = buffer () in
         to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str;
-        let len = Buffer.length buf in
-        let bytes = Bytes.create len in
-        Buffer.blit buf 0 bytes 0 len;
-        Bytes.unsafe_to_string bytes
+        bytes_of_buffer buf
+    ;;
+
+    let to_string_hum_internal
+      ?indent
+      ?max_width
+      sexp
+      ~mach_maybe_esc_str
+      ~maybe_globalize
+      ~to_buffer_hum
+      =
+      match sexp with
+      | Atom str
+        when match index_of_newline str 0 with
+             | None -> true
+             | Some _ -> false -> mach_maybe_esc_str str
+      | sexp ->
+        let sexp = maybe_globalize sexp in
+        let buf = buffer () in
+        to_buffer_hum ~buf ?indent ?max_width sexp;
+        bytes_of_buffer buf
     ;;
   end [@@ocaml.doc " @inline "]
 
@@ -227,15 +299,16 @@ module Printing = struct
 
     (* String conversions *)
 
-    let to_string_hum ?indent ?max_width = function
-      | Atom str
-        when match index_of_newline str 0 with
-             | None -> true
-             | Some _ -> false -> mach_maybe_esc_str str
-      | sexp ->
-        let buf = buffer () in
-        to_buffer_hum ~buf ?indent ?max_width sexp;
-        Buffer.contents buf
+    let maybe_globalize sexp = sexp
+
+    let to_string_hum ?indent ?max_width sexp =
+      to_string_hum_internal
+        ?indent
+        ?max_width
+        sexp
+        ~mach_maybe_esc_str
+        ~maybe_globalize
+        ~to_buffer_hum
     ;;
 
     let to_string_mach sexp = to_string_mach_internal sexp ~mach_maybe_esc_str
@@ -527,6 +600,18 @@ module Printing = struct
 end
 
 include Printing
+
+let globalize = Globalize.globalize
+
+let to_string_hum__stack ?indent ?max_width sexp = exclave_
+  to_string_hum_internal__stack
+    ?indent
+    ?max_width
+    sexp
+    ~mach_maybe_esc_str:mach_maybe_esc_str__stack
+    ~maybe_globalize:Globalize.maybe_globalize
+    ~to_buffer_hum
+;;
 
 let of_float_style = Dynamic.make (`No_underscores : [ `Underscores | `No_underscores ])
 let of_int_style = Dynamic.make (`No_underscores : [ `Underscores | `No_underscores ])

@@ -46,13 +46,18 @@ end
 module String = struct
   include String
 
-  external length : (string[@local_opt]) -> int @@ portable = "%string_length"
-  external get : (string[@local_opt]) -> int -> char @@ portable = "%string_safe_get"
+  let rec index_rec_opt s lim i c =
+    if i >= lim
+    then None
+    else if unsafe_get s i = c
+    then Some i
+    else index_rec_opt s lim (i + 1) c
+  ;;
 
-  external unsafe_get
-    :  (string[@local_opt])
-    -> int
-    -> char
-    @@ portable
-    = "%string_unsafe_get"
+  let index_from_opt s i c =
+    let l = length s in
+    if i < 0 || i > l
+    then invalid_arg "String.index_from_opt / Bytes.index_from_opt"
+    else index_rec_opt s l i c
+  ;;
 end

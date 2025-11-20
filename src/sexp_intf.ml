@@ -1,7 +1,7 @@
 open Basement
 
 module Definitions = struct
-  type t =
+  type t = Sexp_type.Sexp.t =
     | Atom of string
     | List of t list
 
@@ -91,7 +91,7 @@ module Definitions = struct
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-      https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Pretty_printing_helpers_private : Pretty_printing_helpers_private
   end
 end
@@ -99,16 +99,17 @@ end
 module type Sexp = sig @@ portable
   (*_ NOTE: We do not use the [include module type of struct] pattern here as it messes
       with the compiler's short-names heuristics. This should be okay since [Definitions]
-      isn't exported from this library.*)
+      isn't exported from this library. *)
   include module type of Definitions
 
   (*_ We don't use [@@deriving sexp] as this would generated references to [Sexplib],
-    creating a circular dependency *)
+      creating a circular dependency *)
   val t_of_sexp : t -> t
   val sexp_of_t : t -> t
   val sexp_of_t__stack : local_ t -> local_ t
   val equal : t -> t -> bool
   val compare : t -> t -> int
+  val globalize : t @ local -> t @ global
 
   (** [Not_found_s] is used by functions that historically raised [Not_found], to allow
       them to raise an exception that contains an informative error message (as a sexp),
@@ -161,7 +162,11 @@ module type Sexp = sig @@ portable
 
   include Pretty_printing with type output := string
 
-  (** See [Pretty_printing.to_string_mach] and [to_string], respectively. *)
+  (** See [Pretty_printing.to_string_hum], [to_string_mach], and [to_string],
+      respectively. *)
+
+  (** WARNING [to_string_hum__stack] globalizes [t] if it is allocated on the stack. *)
+  val to_string_hum__stack : ?indent:int -> ?max_width:int -> t @ local -> string @ local
 
   val to_string_mach__stack : t @ local -> string @ local
   val to_string__stack : t @ local -> string @ local
@@ -173,7 +178,7 @@ module type Sexp = sig @@ portable
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     (*_ Exported for sexplib *)
 
