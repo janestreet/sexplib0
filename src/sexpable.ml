@@ -14,22 +14,16 @@
     val sexp_of_t : t -> Sexp.t [@@alloc a @ m = (a @ m, heap @ global)]
   end
 
-  module type S_any = sig
+  module type S = sig
     type t
 
     include Of_sexp with type t := t
     include Sexp_of [@alloc a] with type t := t
   end
 
-  module type S = sig
-    type t
-
-    include S_any [@alloc a] with type t := t
-  end
-
   [@@@kind.default ka = (value, any)]
 
-  module type S_any1 = sig
+  module type S1 = sig
     type 'a t
 
     val t_of_sexp : 'a. (Sexp.t -> 'a) -> Sexp.t -> 'a t
@@ -38,15 +32,9 @@
     [@@alloc a @ m = (a @ m, heap @ global)]
   end
 
-  module type S1 = sig
-    type 'a t
-
-    include S_any1 [@kind ka] [@alloc a] with type 'a t := 'a t
-  end
-
   [@@@kind.default kb = (value, any)]
 
-  module type S_any2 = sig
+  module type S2 = sig
     type ('a, 'b) t
 
     val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
@@ -55,15 +43,9 @@
     [@@alloc a @ m = (a @ m, heap @ global)]
   end
 
-  module type S2 = sig
-    type ('a, 'b) t
-
-    include S_any2 [@kind ka kb] [@alloc a] with type ('a, 'b) t := ('a, 'b) t
-  end
-
   [@@@kind.default kc = (value, any)]
 
-  module type S_any3 = sig
+  module type S3 = sig
     type ('a, 'b, 'c) t
 
     val t_of_sexp
@@ -74,12 +56,6 @@
       : 'a 'b 'c.
       ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
     [@@alloc a @ m = (a @ m, heap @ global)]
-  end
-
-  module type S3 = sig
-    type ('a, 'b, 'c) t
-
-    include S_any3 [@kind ka kb kc] [@alloc a] with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
   end]]
 
 module type Of_sexp = sig
@@ -95,49 +71,31 @@ include struct
     val sexp_of_t : t -> Sexp.t
   end
 
-  module type S_any = sig
+  module type S = sig
     type t
 
     include Of_sexp with type t := t
     include Sexp_of with type t := t
   end
 
-  module type S = sig
-    type t
-
-    include S_any with type t := t
-  end
-
   include struct
-    module type S_any1 = sig
+    module type S1 = sig
       type 'a t
 
       val t_of_sexp : 'a. (Sexp.t -> 'a) -> Sexp.t -> 'a t
       val sexp_of_t : 'a. ('a -> Sexp.t) -> 'a t -> Sexp.t
     end
 
-    module type S1 = sig
-      type 'a t
-
-      include S_any1 with type 'a t := 'a t
-    end
-
     include struct
-      module type S_any2 = sig
+      module type S2 = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2 = sig
-        type ('a, 'b) t
-
-        include S_any2 with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3 = sig
+        module type S3 = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -147,17 +105,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3 = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__value__value__any = sig
+        module type S3__value__value__any = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -167,32 +119,20 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__value__value__any = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__value__value__any with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
 
     include struct
-      module type S_any2__value__any = sig
+      module type S2__value__any = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__value__any = sig
-        type ('a, 'b) t
-
-        include S_any2__value__any with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__value__any__value = sig
+        module type S3__value__any__value = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -202,17 +142,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__value__any__value = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__value__any__value with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__value__any__any = sig
+        module type S3__value__any__any = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -222,47 +156,29 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__value__any__any = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__value__any__any with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
   end [@@ocaml.doc " @inline "]
 
   include struct
-    module type S_any1__any = sig
+    module type S1__any = sig
       type 'a t
 
       val t_of_sexp : 'a. (Sexp.t -> 'a) -> Sexp.t -> 'a t
       val sexp_of_t : 'a. ('a -> Sexp.t) -> 'a t -> Sexp.t
     end
 
-    module type S1__any = sig
-      type 'a t
-
-      include S_any1__any with type 'a t := 'a t
-    end
-
     include struct
-      module type S_any2__any__value = sig
+      module type S2__any__value = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__any__value = sig
-        type ('a, 'b) t
-
-        include S_any2__any__value with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__any__value__value = sig
+        module type S3__any__value__value = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -272,17 +188,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__value__value = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__any__value__value with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__any__value__any = sig
+        module type S3__any__value__any = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -292,32 +202,20 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__value__any = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__any__value__any with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
 
     include struct
-      module type S_any2__any__any = sig
+      module type S2__any__any = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__any__any = sig
-        type ('a, 'b) t
-
-        include S_any2__any__any with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__any__any__value = sig
+        module type S3__any__any__value = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -327,17 +225,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__any__value = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__any__any__value with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__any__any__any = sig
+        module type S3__any__any__any = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -347,12 +239,6 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__any__any = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__any__any__any with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
@@ -372,21 +258,15 @@ include struct
     val sexp_of_t : t -> Sexp.t
   end
 
-  module type S_any__stack = sig
+  module type S__stack = sig
     type t
 
     include Of_sexp with type t := t
     include Sexp_of__stack with type t := t
   end
 
-  module type S__stack = sig
-    type t
-
-    include S_any__stack with type t := t
-  end
-
   include struct
-    module type S_any1__stack = sig
+    module type S1__stack = sig
       type 'a t
 
       val t_of_sexp : 'a. (Sexp.t -> 'a) -> Sexp.t -> 'a t
@@ -400,14 +280,8 @@ include struct
       val sexp_of_t : 'a. ('a -> Sexp.t) -> 'a t -> Sexp.t
     end
 
-    module type S1__stack = sig
-      type 'a t
-
-      include S_any1__stack with type 'a t := 'a t
-    end
-
     include struct
-      module type S_any2__stack = sig
+      module type S2__stack = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
@@ -423,14 +297,8 @@ include struct
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__stack = sig
-        type ('a, 'b) t
-
-        include S_any2__stack with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__stack = sig
+        module type S3__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -448,17 +316,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__stack = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__value__value__any__stack = sig
+        module type S3__value__value__any__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -476,19 +338,12 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__value__value__any__stack = sig
-          type ('a, 'b, 'c) t
-
-          include
-            S_any3__value__value__any__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
 
     include struct
-      module type S_any2__value__any__stack = sig
+      module type S2__value__any__stack = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
@@ -504,14 +359,8 @@ include struct
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__value__any__stack = sig
-        type ('a, 'b) t
-
-        include S_any2__value__any__stack with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__value__any__value__stack = sig
+        module type S3__value__any__value__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -529,18 +378,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__value__any__value__stack = sig
-          type ('a, 'b, 'c) t
-
-          include
-            S_any3__value__any__value__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__value__any__any__stack = sig
+        module type S3__value__any__any__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -558,20 +400,13 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__value__any__any__stack = sig
-          type ('a, 'b, 'c) t
-
-          include
-            S_any3__value__any__any__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
   end [@@ocaml.doc " @inline "]
 
   include struct
-    module type S_any1__any__stack = sig
+    module type S1__any__stack = sig
       type 'a t
 
       val t_of_sexp : 'a. (Sexp.t -> 'a) -> Sexp.t -> 'a t
@@ -585,14 +420,8 @@ include struct
       val sexp_of_t : 'a. ('a -> Sexp.t) -> 'a t -> Sexp.t
     end
 
-    module type S1__any__stack = sig
-      type 'a t
-
-      include S_any1__any__stack with type 'a t := 'a t
-    end
-
     include struct
-      module type S_any2__any__value__stack = sig
+      module type S2__any__value__stack = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
@@ -608,14 +437,8 @@ include struct
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__any__value__stack = sig
-        type ('a, 'b) t
-
-        include S_any2__any__value__stack with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__any__value__value__stack = sig
+        module type S3__any__value__value__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -633,18 +456,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__value__value__stack = sig
-          type ('a, 'b, 'c) t
-
-          include
-            S_any3__any__value__value__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__any__value__any__stack = sig
+        module type S3__any__value__any__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -662,19 +478,12 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__value__any__stack = sig
-          type ('a, 'b, 'c) t
-
-          include
-            S_any3__any__value__any__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]
 
     include struct
-      module type S_any2__any__any__stack = sig
+      module type S2__any__any__stack = sig
         type ('a, 'b) t
 
         val t_of_sexp : 'a 'b. (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
@@ -690,14 +499,8 @@ include struct
         val sexp_of_t : 'a 'b. ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
       end
 
-      module type S2__any__any__stack = sig
-        type ('a, 'b) t
-
-        include S_any2__any__any__stack with type ('a, 'b) t := ('a, 'b) t
-      end
-
       include struct
-        module type S_any3__any__any__value__stack = sig
+        module type S3__any__any__value__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -715,18 +518,11 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__any__value__stack = sig
-          type ('a, 'b, 'c) t
-
-          include
-            S_any3__any__any__value__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
 
       include struct
-        module type S_any3__any__any__any__stack = sig
+        module type S3__any__any__any__stack = sig
           type ('a, 'b, 'c) t
 
           val t_of_sexp
@@ -744,12 +540,6 @@ include struct
           val sexp_of_t
             : 'a 'b 'c.
             ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t -> Sexp.t
-        end
-
-        module type S3__any__any__any__stack = sig
-          type ('a, 'b, 'c) t
-
-          include S_any3__any__any__any__stack with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
         end
       end [@@ocaml.doc " @inline "]
     end [@@ocaml.doc " @inline "]

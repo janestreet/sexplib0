@@ -3,13 +3,29 @@
 open StdLabels
 open MoreLabels
 open Basement
-
-open Blocking_sync [@@alert
-                     "-deprecated"
-                     (* Used here since sexplib0 can't depend on Await_sync *)]
-
 open Printf
 open Sexp
+
+(* A miniature subset of the [Capsule] api with [Sync_blocking]; defined locally to avoid
+   dependency issues. *)
+module With_mutex : sig
+  type 'a t
+
+  val create : (unit -> 'a) -> 'a t
+  val with_lock : 'a t -> f:('a -> 'b) -> 'b
+end = struct
+  module Mutex = Basement.Blocking_sync.Mutex [@@alert "-deprecated"]
+
+  type 'a t = T of ('a * Mutex.t) [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+  let create f = T (f (), Mutex.create ())
+
+  type 'a box = { box : 'a } [@@unboxed]
+
+  let with_lock (T (a, mutex)) ~f =
+    (Mutex.with_lock mutex ~f:(fun () -> { box = f a })).box
+  ;;
+end
 
 (* Conversion of OCaml-values to S-expressions *)
 
@@ -56,13 +72,6 @@ external format_int32 : string -> int32 -> string = "caml_int32_format"
 external format_int64 : string -> int64 -> string = "caml_int64_format"
 external format_nativeint : string -> nativeint -> string = "caml_nativeint_format"
 external lazy_force : ('a lazy_t[@local_opt]) -> ('a[@local_opt]) = "%lazy_force"
-external array_length : _ array -> int = "%array_length"
-
-external array_safe_get
-  :  ('a array[@local_opt])
-  -> int
-  -> ('a[@local_opt])
-  = "%array_safe_get"
 
 let string_of_int32 n = format_int32 "%d" n
 let string_of_int64 n = format_int64 "%d" n
@@ -71,11 +80,11 @@ let string_of_nativeint n = format_nativeint "%d" n
 (* '%.17g' is guaranteed to be round-trippable.
 
    '%.15g' will be round-trippable and not have noise at the last digit or two for a float
-   which was converted from a decimal (string) with <= 15 significant digits.  So it's
+   which was converted from a decimal (string) with <= 15 significant digits. So it's
    worth trying first to avoid things like "3.1400000000000001".
 
-   See comment above [to_string_round_trippable] in {!Core.Float} for
-   detailed explanation and examples. *)
+   See comment above [to_string_round_trippable] in {!Core.Float} for detailed explanation
+   and examples. *)
 let default_string_of_float =
   Dynamic.make (fun x ->
     let y = format_float "%.15G" x in
@@ -177,7 +186,16 @@ let sexp_of_triple sexp_of__a sexp_of__b sexp_of__c (a, b, c) =
 let sexp_of_list sexp_of__a lst = List (List.map lst ~f:sexp_of__a)
 let sexp_of_list__stack sexp_of__a lst = List (list_map__stack sexp_of__a lst)
 
-let sexp_of_array sexp_of__a ar =
+(* Rebind basic [Array] primitives over [value_or_null mod separable] *)
+module Array = struct
+  external length : 'a. ('a array[@local_opt]) -> int = "%array_length"
+  external get : 'a. ('a array[@local_opt]) -> int -> 'a = "%array_safe_get"
+  external set : 'a. ('a array[@local_opt]) -> int -> 'a -> unit = "%array_safe_set"
+  external make : 'a. int -> 'a -> 'a array = "caml_make_vect"
+end
+
+let sexp_of_array : type a. (a -> Sexp.t) -> a array -> Sexp.t =
+  fun sexp_of__a ar ->
   let lst_ref = ref [] in
   for i = Array.length ar - 1 downto 0 do
     lst_ref := sexp_of__a ar.(i) :: !lst_ref
@@ -185,11 +203,12 @@ let sexp_of_array sexp_of__a ar =
   List !lst_ref
 ;;
 
-let sexp_of_array__stack sexp_of__a ar =
+let sexp_of_array__stack : 'a. ('a -> Sexp.t) -> 'a array -> Sexp.t =
+  fun sexp_of__a ar ->
   let rec loop i acc =
-    if i < 0 then List acc else loop (i - 1) (sexp_of__a (array_safe_get ar i) :: acc)
+    if i < 0 then List acc else loop (i - 1) (sexp_of__a ar.(i) :: acc)
   in
-  loop (array_length ar - 1) []
+  loop (Array.length ar - 1) []
 ;;
 
 let sexp_of_hashtbl sexp_of_key sexp_of_val htbl =
@@ -221,42 +240,18 @@ module Exn_converter = struct
       let hash = Obj.Extension_constructor.id
     end)
 
-  module type The_exn_table = sig
-    type key
-
-    val lock : key Mutex.t
-  end
-
-  module The_exn_table : The_exn_table =
-    (val let (Capsule.Key.P (type key) (key : key Capsule.Key.t)) = Capsule.create () in
-         let lock = Mutex.create key in
-         (module struct
-           type nonrec key = key
-
-           let lock = lock
-         end : The_exn_table))
-
-  let the_exn_table : (Registration.t Exn_table.t, The_exn_table.key) Capsule.Data.t =
-    Capsule.Data.create (fun () -> Exn_table.create 17)
+  let the_exn_table : Registration.t Exn_table.t With_mutex.t =
+    With_mutex.create (fun () -> Exn_table.create 17)
   ;;
 
   (* Ephemerons are used so that [sexp_of_exn] closure don't keep the
      extension_constructor live. *)
   let add ?(printexc = true) ?finalise:_ extension_constructor sexp_of_exn =
-    let sexp_of_exn = Portability_hacks.magic_portable__needs_base_and_core sexp_of_exn in
-    let extension_constructor =
-      Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
-    in
-    Mutex.with_lock The_exn_table.lock ~f:(fun password ->
-      Capsule.Data.iter the_exn_table ~password ~f:(fun the_exn_table ->
-        let extension_constructor =
-          Portability_hacks.Cross.Contended.(cross extension_constructor)
-            extension_constructor
-        in
-        Exn_table.add
-          the_exn_table
-          extension_constructor
-          ({ sexp_of_exn; printexc } : Registration.t)))
+    With_mutex.with_lock the_exn_table ~f:(fun the_exn_table ->
+      Exn_table.add
+        the_exn_table
+        extension_constructor
+        ({ sexp_of_exn; printexc } : Registration.t))
   ;;
 
   let find_auto ~for_printexc exn =
@@ -265,17 +260,15 @@ module Exn_converter = struct
       Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
     in
     match
-      Mutex.with_lock The_exn_table.lock ~f:(fun password ->
-        Capsule.Data.extract the_exn_table ~password ~f:(fun the_exn_table ->
-          let extension_constructor =
-            Portability_hacks.Cross.Contended.(cross extension_constructor)
-              extension_constructor
-          in
-          { Stdlib_shim.Modes.Aliased.aliased =
-              (Exn_table.find_opt the_exn_table extension_constructor
-               : Registration.t option)
-          })
-        [@nontail])
+      With_mutex.with_lock the_exn_table ~f:(fun the_exn_table ->
+        let extension_constructor =
+          Portability_hacks.Cross.Contended.(cross extension_constructor)
+            extension_constructor
+        in
+        { Stdlib_shim.Modes.Aliased.aliased =
+            (Exn_table.find_opt the_exn_table extension_constructor
+             : Registration.t option)
+        })
     with
     | { aliased = None } -> None
     | { aliased = Some { sexp_of_exn; printexc } } ->
@@ -286,9 +279,8 @@ module Exn_converter = struct
 
   module For_unit_tests_only = struct
     let size () =
-      Mutex.with_lock The_exn_table.lock ~f:(fun password ->
-        Capsule.Data.extract the_exn_table ~password ~f:(fun the_exn_table ->
-          (Exn_table.stats_alive the_exn_table).num_bindings))
+      With_mutex.with_lock the_exn_table ~f:(fun the_exn_table ->
+        (Exn_table.stats_alive the_exn_table).num_bindings)
     ;;
   end
 end
@@ -304,12 +296,14 @@ let sexp_of_exn exn =
 
 let exn_to_string e = Sexp.to_string_hum (sexp_of_exn e)
 
-(* {[exception Blah [@@deriving sexp]]} generates a call to the function
-   [Exn_converter.add] defined in this file.  So we are guaranted that as soon as we
-   mark an exception as sexpable, this module will be linked in and this printer will be
-   registered, which is what we want. *)
+(* {[
+     exception Blah [@@deriving sexp]
+   ]}
+   generates a call to the function [Exn_converter.add] defined in this file. So we are
+   guaranted that as soon as we mark an exception as sexpable, this module will be linked
+   in and this printer will be registered, which is what we want. *)
 let () =
-  (Printexc.register_printer [@alert "-unsafe_multidomain"]) (fun exn ->
+  Stdlib_shim.Printexc.Safe.register_printer (fun exn ->
     match sexp_of_exn_opt_for_printexc exn with
     | None -> None
     | Some sexp -> Some (Sexp.to_string_hum ~indent:2 sexp))

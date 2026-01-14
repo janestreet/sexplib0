@@ -31,7 +31,7 @@ let t_of_sexp =
          ; kind = Required
          ; conv =
              (fun sexp ->
-               let value = int_of_sexp sexp in
+               let value = (int_of_sexp [@inlined never]) sexp in
                fun () -> value)
          ; rest =
              Field
@@ -39,7 +39,7 @@ let t_of_sexp =
                ; kind = Omit_nil
                ; conv =
                    (fun sexp ->
-                     let value = option_of_sexp int_of_sexp sexp in
+                     let value = (option_of_sexp int_of_sexp [@inlined never]) sexp in
                      fun () -> value)
                ; rest =
                    Field
@@ -67,7 +67,9 @@ let t_of_sexp =
                                              ; kind = Default (fun () -> 0)
                                              ; conv =
                                                  (fun sexp ->
-                                                   let value = int_of_sexp sexp in
+                                                   let value =
+                                                     (int_of_sexp [@inlined never]) sexp
+                                                   in
                                                    fun () -> value)
                                              ; rest =
                                                  Field
