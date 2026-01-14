@@ -289,15 +289,7 @@ module Exn_converter = struct
   (* Ephemerons are used so that [sexp_of_exn] closure don't keep the
      extension_constructor live. *)
   let add ?(printexc = true) ?finalise:_ extension_constructor sexp_of_exn =
-    let sexp_of_exn = Portability_hacks.magic_portable__needs_base_and_core sexp_of_exn in
-    let extension_constructor =
-      Portability_hacks.Cross.Portable.(cross extension_constructor) extension_constructor
-    in
     With_mutex.with_lock the_exn_table ~f:(fun the_exn_table ->
-      let extension_constructor =
-        Portability_hacks.Cross.Contended.(cross extension_constructor)
-          extension_constructor
-      in
       Exn_table.add
         the_exn_table
         extension_constructor
@@ -353,7 +345,7 @@ let exn_to_string e = Sexp.to_string_hum (sexp_of_exn e)
    guaranted that as soon as we mark an exception as sexpable, this module will be linked
    in and this printer will be registered, which is what we want. *)
 let () =
-  (Printexc.register_printer [@alert "-unsafe_multidomain"]) (fun exn ->
+  Stdlib_shim.Printexc.Safe.register_printer (fun exn ->
     match sexp_of_exn_opt_for_printexc exn with
     | None -> None
     | Some sexp -> Some (Sexp.to_string_hum ~indent:2 sexp))

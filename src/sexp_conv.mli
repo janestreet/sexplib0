@@ -332,8 +332,9 @@ module (Exn_converter @@ nonportable) : sig
     :  ?printexc:bool
     -> ?finalise:bool
     -> extension_constructor
-    -> (exn -> Sexp.t)
+    -> (exn -> Sexp.t) @ portable
     -> unit
+    @@ portable
 
   module For_unit_tests_only : sig
     val size : unit -> int

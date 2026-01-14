@@ -16,31 +16,6 @@ module Bytes = struct
   include Bytes
 
   external create__stack : int -> bytes @ local @@ portable = "caml_create_local_bytes"
-
-  external unsafe_set
-    :  (bytes[@local_opt])
-    -> int
-    -> char
-    -> unit
-    @@ portable
-    = "%bytes_unsafe_set"
-
-  external unsafe_to_string
-    :  (bytes[@local_opt])
-    -> (string[@local_opt])
-    @@ portable
-    = "%bytes_to_string"
-
-  external unsafe_blit_string
-    :  src:(string[@local_opt])
-    -> src_pos:int
-    -> dst:(bytes[@local_opt])
-    -> dst_pos:int
-    -> len:int
-    -> unit
-    @@ portable
-    = "caml_blit_string"
-  [@@noalloc]
 end
 
 module String = struct
