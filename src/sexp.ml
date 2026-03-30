@@ -1,7 +1,6 @@
 open Basement
 open StdLabels
 open Format
-open Stdlib_stubs
 include Sexp_intf.Definitions
 
 let sexp_of_t t = t
@@ -126,131 +125,127 @@ module Printing = struct
         (bytes_of_buffer [@alloc a]) buf
     ;;]]
 
-  include struct
-    let to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str =
-      let rec loop may_need_space = function
-        | Atom str ->
-          let str' = mach_maybe_esc_str str in
-          let new_may_need_space = str' == str in
-          if may_need_space && new_may_need_space then Buffer.add_char buf ' ';
-          Buffer.add_string buf str';
-          new_may_need_space
-        | List (h :: t) ->
-          Buffer.add_char buf '(';
-          let may_need_space = loop false h in
-          loop_rest may_need_space t;
-          false
-        | List [] ->
-          Buffer.add_string buf "()";
-          false
-      and loop_rest may_need_space = function
-        | h :: t ->
-          let may_need_space = loop may_need_space h in
-          loop_rest may_need_space t
-        | [] -> Buffer.add_char buf ')'
-      in
-      ignore (loop false sexp)
-    ;;
+  let to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str =
+    let rec loop may_need_space = function
+      | Atom str ->
+        let str' = mach_maybe_esc_str str in
+        let new_may_need_space = str' == str in
+        if may_need_space && new_may_need_space then Buffer.add_char buf ' ';
+        Buffer.add_string buf str';
+        new_may_need_space
+      | List (h :: t) ->
+        Buffer.add_char buf '(';
+        let may_need_space = loop false h in
+        loop_rest may_need_space t;
+        false
+      | List [] ->
+        Buffer.add_string buf "()";
+        false
+    and loop_rest may_need_space = function
+      | h :: t ->
+        let may_need_space = loop may_need_space h in
+        loop_rest may_need_space t
+      | [] -> Buffer.add_char buf ')'
+    in
+    ignore (loop false sexp)
+  ;;
 
-    let bytes_of_buffer__stack buf =
-      let len = Buffer.length buf in
-      let bytes = Bytes.create__stack len in
-      Buffer.blit buf 0 bytes 0 len;
-      Bytes.unsafe_to_string bytes
-    ;;
+  let bytes_of_buffer__stack buf =
+    let len = Buffer.length buf in
+    let bytes = Bytes.create len in
+    Buffer.blit buf 0 bytes 0 len;
+    Bytes.unsafe_to_string bytes
+  ;;
 
-    let to_string_mach_internal__stack t ~mach_maybe_esc_str =
-      match t with
-      | Atom str -> mach_maybe_esc_str str
-      | sexp ->
-        let buf = buffer () in
-        to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str;
-        bytes_of_buffer__stack buf
-    ;;
+  let to_string_mach_internal__stack t ~mach_maybe_esc_str =
+    match t with
+    | Atom str -> mach_maybe_esc_str str
+    | sexp ->
+      let buf = buffer () in
+      to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str;
+      bytes_of_buffer__stack buf
+  ;;
 
-    let to_string_hum_internal__stack
-      ?indent
-      ?max_width
-      sexp
-      ~mach_maybe_esc_str
-      ~maybe_globalize
-      ~to_buffer_hum
-      =
-      match sexp with
-      | Atom str
-        when match index_of_newline str 0 with
-             | None -> true
-             | Some _ -> false -> mach_maybe_esc_str str
-      | sexp ->
-        let sexp = maybe_globalize sexp in
-        let buf = buffer () in
-        to_buffer_hum ~buf ?indent ?max_width sexp;
-        bytes_of_buffer__stack buf
-    ;;
-  end [@@ocaml.doc " @inline "]
+  let to_string_hum_internal__stack
+    ?indent
+    ?max_width
+    sexp
+    ~mach_maybe_esc_str
+    ~maybe_globalize
+    ~to_buffer_hum
+    =
+    match sexp with
+    | Atom str
+      when match index_of_newline str 0 with
+           | None -> true
+           | Some _ -> false -> mach_maybe_esc_str str
+    | sexp ->
+      let sexp = maybe_globalize sexp in
+      let buf = buffer () in
+      to_buffer_hum ~buf ?indent ?max_width sexp;
+      bytes_of_buffer__stack buf
+  ;;
 
-  include struct
-    let to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str =
-      let rec loop may_need_space = function
-        | Atom str ->
-          let str' = mach_maybe_esc_str str in
-          let new_may_need_space = str' == str in
-          if may_need_space && new_may_need_space then Buffer.add_char buf ' ';
-          Buffer.add_string buf str';
-          new_may_need_space
-        | List (h :: t) ->
-          Buffer.add_char buf '(';
-          let may_need_space = loop false h in
-          loop_rest may_need_space t;
-          false
-        | List [] ->
-          Buffer.add_string buf "()";
-          false
-      and loop_rest may_need_space = function
-        | h :: t ->
-          let may_need_space = loop may_need_space h in
-          loop_rest may_need_space t
-        | [] -> Buffer.add_char buf ')'
-      in
-      ignore (loop false sexp)
-    ;;
+  let to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str =
+    let rec loop may_need_space = function
+      | Atom str ->
+        let str' = mach_maybe_esc_str str in
+        let new_may_need_space = str' == str in
+        if may_need_space && new_may_need_space then Buffer.add_char buf ' ';
+        Buffer.add_string buf str';
+        new_may_need_space
+      | List (h :: t) ->
+        Buffer.add_char buf '(';
+        let may_need_space = loop false h in
+        loop_rest may_need_space t;
+        false
+      | List [] ->
+        Buffer.add_string buf "()";
+        false
+    and loop_rest may_need_space = function
+      | h :: t ->
+        let may_need_space = loop may_need_space h in
+        loop_rest may_need_space t
+      | [] -> Buffer.add_char buf ')'
+    in
+    ignore (loop false sexp)
+  ;;
 
-    let bytes_of_buffer buf =
-      let len = Buffer.length buf in
-      let bytes = Bytes.create len in
-      Buffer.blit buf 0 bytes 0 len;
-      Bytes.unsafe_to_string bytes
-    ;;
+  let bytes_of_buffer buf =
+    let len = Buffer.length buf in
+    let bytes = Bytes.create len in
+    Buffer.blit buf 0 bytes 0 len;
+    Bytes.unsafe_to_string bytes
+  ;;
 
-    let to_string_mach_internal t ~mach_maybe_esc_str =
-      match t with
-      | Atom str -> mach_maybe_esc_str str
-      | sexp ->
-        let buf = buffer () in
-        to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str;
-        bytes_of_buffer buf
-    ;;
+  let to_string_mach_internal t ~mach_maybe_esc_str =
+    match t with
+    | Atom str -> mach_maybe_esc_str str
+    | sexp ->
+      let buf = buffer () in
+      to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str;
+      bytes_of_buffer buf
+  ;;
 
-    let to_string_hum_internal
-      ?indent
-      ?max_width
-      sexp
-      ~mach_maybe_esc_str
-      ~maybe_globalize
-      ~to_buffer_hum
-      =
-      match sexp with
-      | Atom str
-        when match index_of_newline str 0 with
-             | None -> true
-             | Some _ -> false -> mach_maybe_esc_str str
-      | sexp ->
-        let sexp = maybe_globalize sexp in
-        let buf = buffer () in
-        to_buffer_hum ~buf ?indent ?max_width sexp;
-        bytes_of_buffer buf
-    ;;
-  end [@@ocaml.doc " @inline "]
+  let to_string_hum_internal
+    ?indent
+    ?max_width
+    sexp
+    ~mach_maybe_esc_str
+    ~maybe_globalize
+    ~to_buffer_hum
+    =
+    match sexp with
+    | Atom str
+      when match index_of_newline str 0 with
+           | None -> true
+           | Some _ -> false -> mach_maybe_esc_str str
+    | sexp ->
+      let sexp = maybe_globalize sexp in
+      let buf = buffer () in
+      to_buffer_hum ~buf ?indent ?max_width sexp;
+      bytes_of_buffer buf
+  ;;
 
   [@@@end]
 
@@ -433,63 +428,59 @@ module Printing = struct
 
       let to_string = (to_string_mach [@alloc a])]]
 
-    include struct
-      let escaped s =
-        let length_of_escaped_string = length_of_escaped_string s in
-        if length_of_escaped_string = String.length s
-        then s
-        else (
-          let bytes = Bytes.create length_of_escaped_string in
-          escaped_bytes s bytes;
-          Bytes.unsafe_to_string bytes)
-      ;;
+    let escaped s =
+      let length_of_escaped_string = length_of_escaped_string s in
+      if length_of_escaped_string = String.length s
+      then s
+      else (
+        let bytes = Bytes.create length_of_escaped_string in
+        escaped_bytes s bytes;
+        Bytes.unsafe_to_string bytes)
+    ;;
 
-      let esc_str str =
-        let estr = escaped str in
-        let elen = String.length estr in
-        let res = Bytes.create (elen + 2) in
-        Bytes.unsafe_blit_string ~src:estr ~src_pos:0 ~dst:res ~dst_pos:1 ~len:elen;
-        Bytes.unsafe_set res 0 '"';
-        Bytes.unsafe_set res (elen + 1) '"';
-        Bytes.unsafe_to_string res
-      ;;
+    let esc_str str =
+      let estr = escaped str in
+      let elen = String.length estr in
+      let res = Bytes.create (elen + 2) in
+      Bytes.unsafe_blit_string ~src:estr ~src_pos:0 ~dst:res ~dst_pos:1 ~len:elen;
+      Bytes.unsafe_set res 0 '"';
+      Bytes.unsafe_set res (elen + 1) '"';
+      Bytes.unsafe_to_string res
+    ;;
 
-      let mach_maybe_esc_str str = if must_escape str then esc_str str else str
-      let to_string_mach sexp = to_string_mach_internal sexp ~mach_maybe_esc_str
-      let to_string = to_string_mach
-    end [@@ocaml.doc " @inline "]
+    let mach_maybe_esc_str str = if must_escape str then esc_str str else str
+    let to_string_mach sexp = to_string_mach_internal sexp ~mach_maybe_esc_str
+    let to_string = to_string_mach
 
-    include struct
-      let escaped__stack s =
-        let length_of_escaped_string = length_of_escaped_string s in
-        if length_of_escaped_string = String.length s
-        then s
-        else (
-          let bytes = Bytes.create__stack length_of_escaped_string in
-          escaped_bytes s bytes;
-          Bytes.unsafe_to_string bytes)
-      ;;
+    let escaped__stack s =
+      let length_of_escaped_string = length_of_escaped_string s in
+      if length_of_escaped_string = String.length s
+      then s
+      else (
+        let bytes = Bytes.create length_of_escaped_string in
+        escaped_bytes s bytes;
+        Bytes.unsafe_to_string bytes)
+    ;;
 
-      let esc_str__stack str =
-        let estr = escaped__stack str in
-        let elen = String.length estr in
-        let res = Bytes.create__stack (elen + 2) in
-        Bytes.unsafe_blit_string ~src:estr ~src_pos:0 ~dst:res ~dst_pos:1 ~len:elen;
-        Bytes.unsafe_set res 0 '"';
-        Bytes.unsafe_set res (elen + 1) '"';
-        Bytes.unsafe_to_string res
-      ;;
+    let esc_str__stack str =
+      let estr = escaped__stack str in
+      let elen = String.length estr in
+      let res = Bytes.create (elen + 2) in
+      Bytes.unsafe_blit_string ~src:estr ~src_pos:0 ~dst:res ~dst_pos:1 ~len:elen;
+      Bytes.unsafe_set res 0 '"';
+      Bytes.unsafe_set res (elen + 1) '"';
+      Bytes.unsafe_to_string res
+    ;;
 
-      let mach_maybe_esc_str__stack str =
-        if must_escape str then esc_str__stack str else str
-      ;;
+    let mach_maybe_esc_str__stack str =
+      if must_escape str then esc_str__stack str else str
+    ;;
 
-      let to_string_mach__stack sexp =
-        to_string_mach_internal__stack sexp ~mach_maybe_esc_str:mach_maybe_esc_str__stack
-      ;;
+    let to_string_mach__stack sexp =
+      to_string_mach_internal__stack sexp ~mach_maybe_esc_str:mach_maybe_esc_str__stack
+    ;;
 
-      let to_string__stack = to_string_mach__stack
-    end [@@ocaml.doc " @inline "]
+    let to_string__stack = to_string_mach__stack
 
     [@@@end]
 

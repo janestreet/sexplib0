@@ -4,8 +4,8 @@ open Sexplib0
 
 let () = Dynamic.set_root sexp_style Sexp_style.simple_pretty
 
-module type S = sig
-  type t [@@deriving equal, sexp]
+module type%template [@mode m = (local, global)] S = sig
+  type t [@@deriving (equal [@mode.explicit m]), sexp]
 end
 
 let test (type a) (module M : S with type t = a) string =
@@ -23,7 +23,7 @@ let%expect_test "simple record" =
       { x : int
       ; y : int
       }
-    [@@deriving equal, sexp_of]
+    [@@deriving equal ~localize, sexp_of]
 
     let t_of_sexp sexp =
       Sexp_conv_record.record_of_sexp
@@ -99,7 +99,7 @@ let%expect_test "record with extra fields" =
       { x : int
       ; y : int
       }
-    [@@deriving equal, sexp_of]
+    [@@deriving equal ~localize, sexp_of]
 
     let t_of_sexp =
       Sexp_conv_record.record_of_sexp
@@ -159,7 +159,7 @@ let%expect_test "record with defaults" =
       { x : int
       ; y : int
       }
-    [@@deriving equal, sexp_of]
+    [@@deriving equal ~localize, sexp_of]
 
     let t_of_sexp =
       Sexp_conv_record.record_of_sexp
@@ -220,7 +220,7 @@ let%expect_test "record with omit nil" =
       { a : int option
       ; b : int list
       }
-    [@@deriving equal, sexp_of]
+    [@@deriving equal ~localize, sexp_of]
 
     let t_of_sexp =
       Sexp_conv_record.record_of_sexp
@@ -284,7 +284,7 @@ let%expect_test "record with sexp types" =
       ; d : bool
       ; e : int Or_null.t
       }
-    [@@deriving equal, sexp_of]
+    [@@deriving equal ~localize, sexp_of]
 
     let t_of_sexp =
       Sexp_conv_record.record_of_sexp
