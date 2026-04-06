@@ -72,669 +72,609 @@ module type Of_sexp = sig
   val t_of_sexp : Sexp.t -> t
 end
 
-include struct
-  module type Sexp_of = sig
-    type t : any
-
-    val sexp_of_t : t @ global -> Sexp.t @ global
-  end
-
-  module type S = sig
-    type t : any
-
-    include Of_sexp with type t := t
-    include Sexp_of with type t := t
-  end
-
-  include struct
-    module type S1 = sig
-      type ('a : value) t : any
-
-      val t_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a t
-
-      val sexp_of_t
-        : ('a : value).
-        ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
-    end
-
-    include struct
-      module type S2 = sig
-        type ('a : value, 'b : value) t : any
-
-        val t_of_sexp
-          : ('a : value) ('b : value).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        val sexp_of_t
-          : ('a : value) ('b : value).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3 = sig
-          type ('a : value, 'b : value, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : value) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : value) ('b : value) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__value__value__any = sig
-          type ('a : value, 'b : value, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : value) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : value) ('b : value) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-
-    include struct
-      module type S2__value__any = sig
-        type ('a : value, 'b : any) t : any
-
-        val t_of_sexp
-          : ('a : value) ('b : any).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        val sexp_of_t
-          : ('a : value) ('b : any).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__value__any__value = sig
-          type ('a : value, 'b : any, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : any) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : value) ('b : any) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__value__any__any = sig
-          type ('a : value, 'b : any, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : any) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : value) ('b : any) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-  end [@@ocaml.doc " @inline "]
-
-  include struct
-    module type S1__any = sig
-      type ('a : any) t : any
-
-      val t_of_sexp : ('a : any). (Sexp.t -> 'a) -> Sexp.t -> 'a t
-
-      val sexp_of_t
-        : ('a : any).
-        ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
-    end
-
-    include struct
-      module type S2__any__value = sig
-        type ('a : any, 'b : value) t : any
-
-        val t_of_sexp
-          : ('a : any) ('b : value).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        val sexp_of_t
-          : ('a : any) ('b : value).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__any__value__value = sig
-          type ('a : any, 'b : value, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : value) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : any) ('b : value) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__any__value__any = sig
-          type ('a : any, 'b : value, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : value) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : any) ('b : value) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-
-    include struct
-      module type S2__any__any = sig
-        type ('a : any, 'b : any) t : any
-
-        val t_of_sexp
-          : ('a : any) ('b : any).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        val sexp_of_t
-          : ('a : any) ('b : any).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__any__any__value = sig
-          type ('a : any, 'b : any, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : any) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : any) ('b : any) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__any__any__any = sig
-          type ('a : any, 'b : any, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : any) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          val sexp_of_t
-            : ('a : any) ('b : any) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-  end [@@ocaml.doc " @inline "]
-end [@@ocaml.doc " @inline "]
-
-include struct
-  module type Sexp_of__stack = sig
-    type t : any
-
-    [@@@ocaml.text "/*"]
-
-    val sexp_of_t__stack : local_ t -> local_ Sexp.t
-
-    [@@@ocaml.text "/*"]
-
-    val sexp_of_t : t @ global -> Sexp.t @ global
-  end
-
-  module type S__stack = sig
-    type t : any
-
-    include Of_sexp with type t := t
-    include Sexp_of__stack with type t := t
-  end
-
-  include struct
-    module type S1__stack = sig
-      type ('a : value) t : any
-
-      val t_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a t
-
-      [@@@ocaml.text "/*"]
-
-      val sexp_of_t__stack
-        : ('a : value).
-        (local_ 'a -> local_ Sexp.t) -> local_ 'a t -> local_ Sexp.t
-
-      [@@@ocaml.text "/*"]
-
-      val sexp_of_t
-        : ('a : value).
-        ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
-    end
-
-    include struct
-      module type S2__stack = sig
-        type ('a : value, 'b : value) t : any
-
-        val t_of_sexp
-          : ('a : value) ('b : value).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t__stack
-          : ('a : value) ('b : value).
-          (local_ 'a -> local_ Sexp.t)
-          -> (local_ 'b -> local_ Sexp.t)
-          -> local_ ('a, 'b) t
-          -> local_ Sexp.t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t
-          : ('a : value) ('b : value).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__stack = sig
-          type ('a : value, 'b : value, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : value) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : value) ('b : value) ('c : value).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : value) ('b : value) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__value__value__any__stack = sig
-          type ('a : value, 'b : value, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : value) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : value) ('b : value) ('c : any).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : value) ('b : value) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-
-    include struct
-      module type S2__value__any__stack = sig
-        type ('a : value, 'b : any) t : any
-
-        val t_of_sexp
-          : ('a : value) ('b : any).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t__stack
-          : ('a : value) ('b : any).
-          (local_ 'a -> local_ Sexp.t)
-          -> (local_ 'b -> local_ Sexp.t)
-          -> local_ ('a, 'b) t
-          -> local_ Sexp.t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t
-          : ('a : value) ('b : any).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__value__any__value__stack = sig
-          type ('a : value, 'b : any, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : any) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : value) ('b : any) ('c : value).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : value) ('b : any) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__value__any__any__stack = sig
-          type ('a : value, 'b : any, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : value) ('b : any) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : value) ('b : any) ('c : any).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : value) ('b : any) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-  end [@@ocaml.doc " @inline "]
-
-  include struct
-    module type S1__any__stack = sig
-      type ('a : any) t : any
-
-      val t_of_sexp : ('a : any). (Sexp.t -> 'a) -> Sexp.t -> 'a t
-
-      [@@@ocaml.text "/*"]
-
-      val sexp_of_t__stack
-        : ('a : any).
-        (local_ 'a -> local_ Sexp.t) -> local_ 'a t -> local_ Sexp.t
-
-      [@@@ocaml.text "/*"]
-
-      val sexp_of_t
-        : ('a : any).
-        ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
-    end
-
-    include struct
-      module type S2__any__value__stack = sig
-        type ('a : any, 'b : value) t : any
-
-        val t_of_sexp
-          : ('a : any) ('b : value).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t__stack
-          : ('a : any) ('b : value).
-          (local_ 'a -> local_ Sexp.t)
-          -> (local_ 'b -> local_ Sexp.t)
-          -> local_ ('a, 'b) t
-          -> local_ Sexp.t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t
-          : ('a : any) ('b : value).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__any__value__value__stack = sig
-          type ('a : any, 'b : value, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : value) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : any) ('b : value) ('c : value).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : any) ('b : value) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__any__value__any__stack = sig
-          type ('a : any, 'b : value, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : value) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : any) ('b : value) ('c : any).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : any) ('b : value) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-
-    include struct
-      module type S2__any__any__stack = sig
-        type ('a : any, 'b : any) t : any
-
-        val t_of_sexp
-          : ('a : any) ('b : any).
-          (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t__stack
-          : ('a : any) ('b : any).
-          (local_ 'a -> local_ Sexp.t)
-          -> (local_ 'b -> local_ Sexp.t)
-          -> local_ ('a, 'b) t
-          -> local_ Sexp.t
-
-        [@@@ocaml.text "/*"]
-
-        val sexp_of_t
-          : ('a : any) ('b : any).
-          ('a @ global -> Sexp.t @ global)
-          -> ('b @ global -> Sexp.t @ global)
-          -> ('a, 'b) t @ global
-          -> Sexp.t @ global
-      end
-
-      include struct
-        module type S3__any__any__value__stack = sig
-          type ('a : any, 'b : any, 'c : value) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : any) ('c : value).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : any) ('b : any) ('c : value).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : any) ('b : any) ('c : value).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-
-      include struct
-        module type S3__any__any__any__stack = sig
-          type ('a : any, 'b : any, 'c : any) t : any
-
-          val t_of_sexp
-            : ('a : any) ('b : any) ('c : any).
-            (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t__stack
-            : ('a : any) ('b : any) ('c : any).
-            (local_ 'a -> local_ Sexp.t)
-            -> (local_ 'b -> local_ Sexp.t)
-            -> (local_ 'c -> local_ Sexp.t)
-            -> local_ ('a, 'b, 'c) t
-            -> local_ Sexp.t
-
-          [@@@ocaml.text "/*"]
-
-          val sexp_of_t
-            : ('a : any) ('b : any) ('c : any).
-            ('a @ global -> Sexp.t @ global)
-            -> ('b @ global -> Sexp.t @ global)
-            -> ('c @ global -> Sexp.t @ global)
-            -> ('a, 'b, 'c) t @ global
-            -> Sexp.t @ global
-        end
-      end [@@ocaml.doc " @inline "]
-    end [@@ocaml.doc " @inline "]
-  end [@@ocaml.doc " @inline "]
-end [@@ocaml.doc " @inline "]
+module type Sexp_of = sig
+  type t : any
+
+  val sexp_of_t : t @ global -> Sexp.t @ global
+end
+
+module type S = sig
+  type t : any
+
+  include Of_sexp with type t := t
+  include Sexp_of with type t := t
+end
+
+module type S1 = sig
+  type ('a : value) t : any
+
+  val t_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a t
+
+  val sexp_of_t
+    : ('a : value).
+    ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
+end
+
+module type S2 = sig
+  type ('a : value, 'b : value) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  val sexp_of_t
+    : ('a : value) ('b : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3 = sig
+  type ('a : value, 'b : value, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : value) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : value) ('b : value) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__value__value__any = sig
+  type ('a : value, 'b : value, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : value) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : value) ('b : value) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S2__value__any = sig
+  type ('a : value, 'b : any) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  val sexp_of_t
+    : ('a : value) ('b : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__value__any__value = sig
+  type ('a : value, 'b : any, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : any) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : value) ('b : any) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__value__any__any = sig
+  type ('a : value, 'b : any, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : any) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : value) ('b : any) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S1__any = sig
+  type ('a : any) t : any
+
+  val t_of_sexp : ('a : any). (Sexp.t -> 'a) -> Sexp.t -> 'a t
+
+  val sexp_of_t
+    : ('a : any).
+    ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
+end
+
+module type S2__any__value = sig
+  type ('a : any, 'b : value) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  val sexp_of_t
+    : ('a : any) ('b : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__value__value = sig
+  type ('a : any, 'b : value, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : value) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : any) ('b : value) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__value__any = sig
+  type ('a : any, 'b : value, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : value) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : any) ('b : value) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S2__any__any = sig
+  type ('a : any, 'b : any) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  val sexp_of_t
+    : ('a : any) ('b : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__any__value = sig
+  type ('a : any, 'b : any, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : any) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : any) ('b : any) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__any__any = sig
+  type ('a : any, 'b : any, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : any) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a : any) ('b : any) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type Sexp_of__stack = sig
+  type t : any
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack : local_ t -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t : t @ global -> Sexp.t @ global
+end
+
+module type S__stack = sig
+  type t : any
+
+  include Of_sexp with type t := t
+  include Sexp_of__stack with type t := t
+end
+
+module type S1__stack = sig
+  type ('a : value) t : any
+
+  val t_of_sexp : ('a : value). (Sexp.t -> 'a) -> Sexp.t -> 'a t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value).
+    (local_ 'a -> local_ Sexp.t) -> local_ 'a t -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value).
+    ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
+end
+
+module type S2__stack = sig
+  type ('a : value, 'b : value) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value) ('b : value).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> local_ ('a, 'b) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value) ('b : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__stack = sig
+  type ('a : value, 'b : value, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : value) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value) ('b : value) ('c : value).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value) ('b : value) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__value__value__any__stack = sig
+  type ('a : value, 'b : value, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : value) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value) ('b : value) ('c : any).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value) ('b : value) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S2__value__any__stack = sig
+  type ('a : value, 'b : any) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value) ('b : any).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> local_ ('a, 'b) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value) ('b : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__value__any__value__stack = sig
+  type ('a : value, 'b : any, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : any) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value) ('b : any) ('c : value).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value) ('b : any) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__value__any__any__stack = sig
+  type ('a : value, 'b : any, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : value) ('b : any) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : value) ('b : any) ('c : any).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : value) ('b : any) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S1__any__stack = sig
+  type ('a : any) t : any
+
+  val t_of_sexp : ('a : any). (Sexp.t -> 'a) -> Sexp.t -> 'a t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any).
+    (local_ 'a -> local_ Sexp.t) -> local_ 'a t -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any).
+    ('a @ global -> Sexp.t @ global) -> 'a t @ global -> Sexp.t @ global
+end
+
+module type S2__any__value__stack = sig
+  type ('a : any, 'b : value) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any) ('b : value).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> local_ ('a, 'b) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any) ('b : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__value__value__stack = sig
+  type ('a : any, 'b : value, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : value) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any) ('b : value) ('c : value).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any) ('b : value) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__value__any__stack = sig
+  type ('a : any, 'b : value, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : value) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any) ('b : value) ('c : any).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any) ('b : value) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S2__any__any__stack = sig
+  type ('a : any, 'b : any) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any) ('b : any).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> local_ ('a, 'b) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any) ('b : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('a, 'b) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__any__value__stack = sig
+  type ('a : any, 'b : any, 'c : value) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : any) ('c : value).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any) ('b : any) ('c : value).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any) ('b : any) ('c : value).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
+
+module type S3__any__any__any__stack = sig
+  type ('a : any, 'b : any, 'c : any) t : any
+
+  val t_of_sexp
+    : ('a : any) ('b : any) ('c : any).
+    (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t -> ('a, 'b, 'c) t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t__stack
+    : ('a : any) ('b : any) ('c : any).
+    (local_ 'a -> local_ Sexp.t)
+    -> (local_ 'b -> local_ Sexp.t)
+    -> (local_ 'c -> local_ Sexp.t)
+    -> local_ ('a, 'b, 'c) t
+    -> local_ Sexp.t
+
+  [@@@ocaml.text "/*"]
+
+  val sexp_of_t
+    : ('a : any) ('b : any) ('c : any).
+    ('a @ global -> Sexp.t @ global)
+    -> ('b @ global -> Sexp.t @ global)
+    -> ('c @ global -> Sexp.t @ global)
+    -> ('a, 'b, 'c) t @ global
+    -> Sexp.t @ global
+end
 
 [@@@end]
 

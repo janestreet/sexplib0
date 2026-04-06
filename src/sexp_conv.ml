@@ -3,6 +3,7 @@
 open StdLabels
 open MoreLabels
 open Basement
+open Or_null_shim.Export
 open Printf
 open Sexp
 
@@ -180,8 +181,8 @@ let sexp_of_option__stack sexp_of__a option =
 let sexp_of_or_null sexp_of__a or_null =
   let write_old_option_format = Dynamic.get write_old_option_format in
   match or_null with
-  | Or_null_shim.This x when write_old_option_format -> List [ sexp_of__a x ]
-  | Or_null_shim.This x -> List [ Atom "this"; sexp_of__a x ]
+  | This x when write_old_option_format -> List [ sexp_of__a x ]
+  | This x -> List [ Atom "this"; sexp_of__a x ]
   | Null when write_old_option_format -> List []
   | Null -> Atom "null"
 ;;
@@ -189,8 +190,8 @@ let sexp_of_or_null sexp_of__a or_null =
 let sexp_of_or_null__stack sexp_of__a or_null =
   let write_old_option_format = Dynamic.get write_old_option_format in
   match or_null with
-  | Or_null_shim.This x when write_old_option_format -> exclave_ List [ sexp_of__a x ]
-  | Or_null_shim.This x -> exclave_ List [ Atom "this"; sexp_of__a x ]
+  | This x when write_old_option_format -> exclave_ List [ sexp_of__a x ]
+  | This x -> exclave_ List [ Atom "this"; sexp_of__a x ]
   | Null when write_old_option_format -> exclave_ List []
   | Null -> exclave_ Atom "null"
 ;;
@@ -228,7 +229,7 @@ module Array = struct
     : ('a : value_or_null mod separable).
     int -> 'a -> 'a array
     @@ portable
-    = "caml_make_vect"
+    = "caml_array_make"
 end
 
 let sexp_of_array
@@ -463,13 +464,13 @@ let or_null_of_sexp a__of_sexp sexp =
   if Dynamic.get read_old_option_format
   then (
     match sexp with
-    | List [] | Atom ("null" | "Null") -> Or_null_shim.Null
+    | List [] | Atom ("null" | "Null") -> Null
     | List [ el ] | List [ Atom ("this" | "This"); el ] -> This (a__of_sexp el)
     | List _ -> of_sexp_error "or_null_of_sexp: list must represent or_null value" sexp
     | Atom _ -> of_sexp_error "or_null_of_sexp: only null can be atom" sexp)
   else (
     match sexp with
-    | Atom ("null" | "Null") -> Or_null_shim.Null
+    | Atom ("null" | "Null") -> Null
     | List [ Atom ("this" | "This"); el ] -> This (a__of_sexp el)
     | Atom _ -> of_sexp_error "or_null_of_sexp: only null can be atom" sexp
     | List _ -> of_sexp_error "or_null_of_sexp: list must be (this el)" sexp)
