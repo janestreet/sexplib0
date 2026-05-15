@@ -39,6 +39,72 @@ let rec equal a b =
 exception Not_found_s of t
 exception Of_sexp_error of exn * t
 
+module Stack_buffer : sig
+  (** Provides a minimal subset of [Buffer]'s capabilities, but allocating everything on
+      the stack. Because of present limitations with how stack allocation works (namely
+      that all mutable fields are forced to be global), this module has a "functional"
+      interface, where you always must use the newly returned [t]. *)
+
+  type t
+
+  val create : unit -> t
+  val add_string : t -> string -> t
+  val add_char : t -> char -> t
+  val length : t -> int
+  val unsafe_blit_all : t -> bytes -> unit
+end = struct
+  type t =
+    { mutable pos : int
+    ; mutable capacity : int
+    ; contents : bytes
+    }
+
+  let create () =
+    let capacity = 1024 in
+    { pos = 0; capacity; contents = Bytes.create capacity }
+  ;;
+
+  let[@inline never] [@specialise never] [@local never] resize t ~space_needed =
+    (* When [space_needed] is small this is only slightly more than [t.capacity * 2], and
+       when [space_needed] is large (potentially even larger than [t.capacity]!), this
+       still does the right thing. *)
+    let new_capacity = (t.pos + space_needed) * 2 in
+    let new_contents = Bytes.create new_capacity in
+    Bytes.unsafe_blit ~src:t.contents ~src_pos:0 ~dst:new_contents ~dst_pos:0 ~len:t.pos;
+    { pos = t.pos; capacity = new_capacity; contents = new_contents }
+  ;;
+
+  let[@inline always] maybe_resize t ~space_needed =
+    if t.pos + space_needed <= t.capacity then t else resize t ~space_needed
+  ;;
+
+  let add_string t string =
+    let string_length = String.length string in
+    let t = maybe_resize t ~space_needed:string_length in
+    Bytes.unsafe_blit_string
+      ~src:string
+      ~src_pos:0
+      ~dst:t.contents
+      ~dst_pos:t.pos
+      ~len:string_length;
+    t.pos <- t.pos + string_length;
+    t
+  ;;
+
+  let add_char t char =
+    let t = maybe_resize t ~space_needed:1 in
+    Bytes.unsafe_set t.contents t.pos char;
+    t.pos <- t.pos + 1;
+    t
+  ;;
+
+  let length t = t.pos
+
+  let unsafe_blit_all t bytes =
+    Bytes.unsafe_blit ~src:t.contents ~src_pos:0 ~dst:bytes ~dst_pos:0 ~len:t.pos
+  ;;
+end
+
 module Printing = struct
   (** Default indentation level for human-readable conversions *)
   let default_indent = Dynamic.make 1
@@ -57,134 +123,6 @@ module Printing = struct
      and 4096. And especially performance-sensitive applications to always pass in a
      larger buffer to use. *)
   let buffer () = Buffer.create 1024
-
-  [@@@expand_inline
-    [%%template
-    [@@@alloc.default a @ m = (stack_local, heap_global)]
-
-    let to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str =
-      let rec loop may_need_space = function
-        | Atom str ->
-          let str' = mach_maybe_esc_str str in
-          let new_may_need_space = str' == str in
-          if may_need_space && new_may_need_space then Buffer.add_char buf ' ';
-          Buffer.add_string buf str';
-          new_may_need_space
-        | List (h :: t) ->
-          Buffer.add_char buf '(';
-          let may_need_space = loop false h in
-          loop_rest may_need_space t;
-          false
-        | List [] ->
-          Buffer.add_string buf "()";
-          false
-      and loop_rest may_need_space = function
-        | h :: t ->
-          let may_need_space = loop may_need_space h in
-          loop_rest may_need_space t
-        | [] -> Buffer.add_char buf ')'
-      in
-      ignore (loop false sexp)
-    ;;
-
-    let bytes_of_buffer buf =
-      (let len = Buffer.length buf in
-       let bytes = (Bytes.create [@alloc a]) len in
-       Buffer.blit buf 0 bytes 0 len;
-       Bytes.unsafe_to_string bytes)
-      [@exclave_if_stack a]
-    ;;
-
-    let to_string_mach_internal t ~mach_maybe_esc_str =
-      match t with
-      | Atom str -> mach_maybe_esc_str str [@exclave_if_stack a]
-      | sexp ->
-        (let buf = buffer () in
-         (to_buffer_mach_internal [@alloc a]) ~buf sexp ~mach_maybe_esc_str;
-         (bytes_of_buffer [@alloc a]) buf)
-        [@exclave_if_stack a]
-    ;;
-
-    let to_string_hum_internal
-      ?indent
-      ?max_width
-      sexp
-      ~mach_maybe_esc_str
-      ~maybe_globalize
-      ~to_buffer_hum
-      =
-      match[@exclave_if_stack a] sexp with
-      | Atom str
-        when match index_of_newline str 0 with
-             | None -> true
-             | Some _ -> false -> mach_maybe_esc_str str
-      | sexp ->
-        let sexp = maybe_globalize sexp in
-        let buf = buffer () in
-        to_buffer_hum ~buf ?indent ?max_width sexp;
-        (bytes_of_buffer [@alloc a]) buf
-    ;;]]
-
-  let to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str =
-    let rec loop may_need_space = function
-      | Atom str ->
-        let str' = mach_maybe_esc_str str in
-        let new_may_need_space = str' == str in
-        if may_need_space && new_may_need_space then Buffer.add_char buf ' ';
-        Buffer.add_string buf str';
-        new_may_need_space
-      | List (h :: t) ->
-        Buffer.add_char buf '(';
-        let may_need_space = loop false h in
-        loop_rest may_need_space t;
-        false
-      | List [] ->
-        Buffer.add_string buf "()";
-        false
-    and loop_rest may_need_space = function
-      | h :: t ->
-        let may_need_space = loop may_need_space h in
-        loop_rest may_need_space t
-      | [] -> Buffer.add_char buf ')'
-    in
-    ignore (loop false sexp)
-  ;;
-
-  let bytes_of_buffer__stack buf =
-    let len = Buffer.length buf in
-    let bytes = Bytes.create len in
-    Buffer.blit buf 0 bytes 0 len;
-    Bytes.unsafe_to_string bytes
-  ;;
-
-  let to_string_mach_internal__stack t ~mach_maybe_esc_str =
-    match t with
-    | Atom str -> mach_maybe_esc_str str
-    | sexp ->
-      let buf = buffer () in
-      to_buffer_mach_internal__stack ~buf sexp ~mach_maybe_esc_str;
-      bytes_of_buffer__stack buf
-  ;;
-
-  let to_string_hum_internal__stack
-    ?indent
-    ?max_width
-    sexp
-    ~mach_maybe_esc_str
-    ~maybe_globalize
-    ~to_buffer_hum
-    =
-    match sexp with
-    | Atom str
-      when match index_of_newline str 0 with
-           | None -> true
-           | Some _ -> false -> mach_maybe_esc_str str
-    | sexp ->
-      let sexp = maybe_globalize sexp in
-      let buf = buffer () in
-      to_buffer_hum ~buf ?indent ?max_width sexp;
-      bytes_of_buffer__stack buf
-  ;;
 
   let to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str =
     let rec loop may_need_space = function
@@ -211,6 +149,171 @@ module Printing = struct
     ignore (loop false sexp)
   ;;
 
+  [@@@expand_inline
+    [%%template
+    [@@@alloc.default a @ m = (stack_local, heap_global)]
+
+    let bytes_of_buffer buf =
+      (let len = Buffer.length buf in
+       let bytes = (Bytes.create [@alloc a]) len in
+       Buffer.blit buf 0 bytes 0 len;
+       Bytes.unsafe_to_string bytes)
+      [@exclave_if_stack a]
+    ;;
+
+    let to_stack_buffer_mach_internal sexp ~mach_maybe_esc_str =
+      let rec loop may_need_space sexp stack_buf ~mach_maybe_esc_str =
+        match sexp with
+        | Atom str ->
+          let str' = mach_maybe_esc_str str in
+          let new_may_need_space = str' == str in
+          let stack_buf =
+            if may_need_space && new_may_need_space
+            then Stack_buffer.add_char stack_buf ' '
+            else stack_buf
+          in
+          let stack_buf = Stack_buffer.add_string stack_buf str' in
+          new_may_need_space, stack_buf
+        | List (h :: t) ->
+          let stack_buf = Stack_buffer.add_char stack_buf '(' in
+          let may_need_space, stack_buf = loop false h stack_buf ~mach_maybe_esc_str in
+          let stack_buf = loop_rest may_need_space t stack_buf ~mach_maybe_esc_str in
+          false, stack_buf
+        | List [] ->
+          let stack_buf = Stack_buffer.add_string stack_buf "()" in
+          false, stack_buf
+      and loop_rest may_need_space sexp stack_buf ~mach_maybe_esc_str =
+        match sexp with
+        | h :: t ->
+          let may_need_space, stack_buf =
+            loop may_need_space h stack_buf ~mach_maybe_esc_str
+          in
+          loop_rest may_need_space t stack_buf ~mach_maybe_esc_str
+        | [] -> Stack_buffer.add_char stack_buf ')'
+      in
+      let stack_buf = Stack_buffer.create () in
+      let _, stack_buf = loop false sexp stack_buf ~mach_maybe_esc_str in
+      stack_buf
+    ;;
+
+    let bytes_of_stack_buffer stack_buf =
+      (let len = Stack_buffer.length stack_buf in
+       let bytes = (Bytes.create [@alloc a]) len in
+       Stack_buffer.unsafe_blit_all stack_buf bytes;
+       Bytes.unsafe_to_string bytes)
+      [@exclave_if_stack a]
+    ;;
+
+    let to_string_mach_internal t ~mach_maybe_esc_str =
+      match t with
+      | Atom str -> mach_maybe_esc_str str [@exclave_if_stack a]
+      | sexp ->
+        (let stack_buf =
+           (to_stack_buffer_mach_internal [@alloc a]) sexp ~mach_maybe_esc_str
+         in
+         let result = (bytes_of_stack_buffer [@alloc a]) stack_buf in
+         result)
+        [@exclave_if_stack a]
+    ;;
+
+    let to_string_hum_internal
+      ?indent
+      ?max_width
+      sexp
+      ~mach_maybe_esc_str
+      ~maybe_globalize
+      ~to_buffer_hum
+      =
+      match[@exclave_if_stack a] sexp with
+      | Atom str
+        when match index_of_newline str 0 with
+             | None -> true
+             | Some _ -> false -> mach_maybe_esc_str str
+      | sexp ->
+        let sexp = maybe_globalize sexp in
+        let buf = buffer () in
+        to_buffer_hum ~buf ?indent ?max_width sexp;
+        (bytes_of_buffer [@alloc a]) buf
+    ;;]]
+
+  let bytes_of_buffer__stack buf =
+    let len = Buffer.length buf in
+    let bytes = Bytes.create len in
+    Buffer.blit buf 0 bytes 0 len;
+    Bytes.unsafe_to_string bytes
+  ;;
+
+  let to_stack_buffer_mach_internal__stack sexp ~mach_maybe_esc_str =
+    let rec loop may_need_space sexp stack_buf ~mach_maybe_esc_str =
+      match sexp with
+      | Atom str ->
+        let str' = mach_maybe_esc_str str in
+        let new_may_need_space = str' == str in
+        let stack_buf =
+          if may_need_space && new_may_need_space
+          then Stack_buffer.add_char stack_buf ' '
+          else stack_buf
+        in
+        let stack_buf = Stack_buffer.add_string stack_buf str' in
+        new_may_need_space, stack_buf
+      | List (h :: t) ->
+        let stack_buf = Stack_buffer.add_char stack_buf '(' in
+        let may_need_space, stack_buf = loop false h stack_buf ~mach_maybe_esc_str in
+        let stack_buf = loop_rest may_need_space t stack_buf ~mach_maybe_esc_str in
+        false, stack_buf
+      | List [] ->
+        let stack_buf = Stack_buffer.add_string stack_buf "()" in
+        false, stack_buf
+    and loop_rest may_need_space sexp stack_buf ~mach_maybe_esc_str =
+      match sexp with
+      | h :: t ->
+        let may_need_space, stack_buf =
+          loop may_need_space h stack_buf ~mach_maybe_esc_str
+        in
+        loop_rest may_need_space t stack_buf ~mach_maybe_esc_str
+      | [] -> Stack_buffer.add_char stack_buf ')'
+    in
+    let stack_buf = Stack_buffer.create () in
+    let _, stack_buf = loop false sexp stack_buf ~mach_maybe_esc_str in
+    stack_buf
+  ;;
+
+  let bytes_of_stack_buffer__stack stack_buf =
+    let len = Stack_buffer.length stack_buf in
+    let bytes = Bytes.create len in
+    Stack_buffer.unsafe_blit_all stack_buf bytes;
+    Bytes.unsafe_to_string bytes
+  ;;
+
+  let to_string_mach_internal__stack t ~mach_maybe_esc_str =
+    match t with
+    | Atom str -> mach_maybe_esc_str str
+    | sexp ->
+      let stack_buf = to_stack_buffer_mach_internal__stack sexp ~mach_maybe_esc_str in
+      let result = bytes_of_stack_buffer__stack stack_buf in
+      result
+  ;;
+
+  let to_string_hum_internal__stack
+    ?indent
+    ?max_width
+    sexp
+    ~mach_maybe_esc_str
+    ~maybe_globalize
+    ~to_buffer_hum
+    =
+    match sexp with
+    | Atom str
+      when match index_of_newline str 0 with
+           | None -> true
+           | Some _ -> false -> mach_maybe_esc_str str
+    | sexp ->
+      let sexp = maybe_globalize sexp in
+      let buf = buffer () in
+      to_buffer_hum ~buf ?indent ?max_width sexp;
+      bytes_of_buffer__stack buf
+  ;;
+
   let bytes_of_buffer buf =
     let len = Buffer.length buf in
     let bytes = Bytes.create len in
@@ -218,13 +321,55 @@ module Printing = struct
     Bytes.unsafe_to_string bytes
   ;;
 
+  let to_stack_buffer_mach_internal sexp ~mach_maybe_esc_str =
+    let rec loop may_need_space sexp stack_buf ~mach_maybe_esc_str =
+      match sexp with
+      | Atom str ->
+        let str' = mach_maybe_esc_str str in
+        let new_may_need_space = str' == str in
+        let stack_buf =
+          if may_need_space && new_may_need_space
+          then Stack_buffer.add_char stack_buf ' '
+          else stack_buf
+        in
+        let stack_buf = Stack_buffer.add_string stack_buf str' in
+        new_may_need_space, stack_buf
+      | List (h :: t) ->
+        let stack_buf = Stack_buffer.add_char stack_buf '(' in
+        let may_need_space, stack_buf = loop false h stack_buf ~mach_maybe_esc_str in
+        let stack_buf = loop_rest may_need_space t stack_buf ~mach_maybe_esc_str in
+        false, stack_buf
+      | List [] ->
+        let stack_buf = Stack_buffer.add_string stack_buf "()" in
+        false, stack_buf
+    and loop_rest may_need_space sexp stack_buf ~mach_maybe_esc_str =
+      match sexp with
+      | h :: t ->
+        let may_need_space, stack_buf =
+          loop may_need_space h stack_buf ~mach_maybe_esc_str
+        in
+        loop_rest may_need_space t stack_buf ~mach_maybe_esc_str
+      | [] -> Stack_buffer.add_char stack_buf ')'
+    in
+    let stack_buf = Stack_buffer.create () in
+    let _, stack_buf = loop false sexp stack_buf ~mach_maybe_esc_str in
+    stack_buf
+  ;;
+
+  let bytes_of_stack_buffer stack_buf =
+    let len = Stack_buffer.length stack_buf in
+    let bytes = Bytes.create len in
+    Stack_buffer.unsafe_blit_all stack_buf bytes;
+    Bytes.unsafe_to_string bytes
+  ;;
+
   let to_string_mach_internal t ~mach_maybe_esc_str =
     match t with
     | Atom str -> mach_maybe_esc_str str
     | sexp ->
-      let buf = buffer () in
-      to_buffer_mach_internal ~buf sexp ~mach_maybe_esc_str;
-      bytes_of_buffer buf
+      let stack_buf = to_stack_buffer_mach_internal sexp ~mach_maybe_esc_str in
+      let result = bytes_of_stack_buffer stack_buf in
+      result
   ;;
 
   let to_string_hum_internal

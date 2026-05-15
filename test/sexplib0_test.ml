@@ -587,6 +587,42 @@ let%expect_test "round-trip [__stack] versions of [to_string]" =
       require_equal (module String) str_hum stack_allocated_str_hum)
 ;;
 
+let%expect_test "floatarray sexp round-trip" =
+  let module FA = Stdlib.Float.Array in
+  let test ar =
+    let sexp = sexp_of_floatarray ar in
+    print_s sexp;
+    let ar' = floatarray_of_sexp sexp in
+    require
+      (FA.length ar = FA.length ar'
+       && List.for_all
+            (List.init (FA.length ar) ~f:Fn.id)
+            ~f:(fun i -> Float.equal (FA.get ar i) (FA.get ar' i)))
+  in
+  test (FA.of_list []);
+  [%expect {| () |}];
+  test (FA.of_list [ 1. ]);
+  [%expect {| (1) |}];
+  test (FA.of_list [ 1.; 2.5; 3. ]);
+  [%expect {| (1 2.5 3) |}]
+;;
+
+let%expect_test "floatarray_of_sexp error on atom" =
+  require_does_raise (fun () -> floatarray_of_sexp (Atom "not-a-list"));
+  [%expect {| (Of_sexp_error "array_of_sexp: list needed" (invalid_sexp not-a-list)) |}]
+;;
+
+[%%template
+[@@@alloc.default a = (stack, heap)]
+
+let%expect_test "sexp_of_floatarray" =
+  let ar = Stdlib.Float.Array.of_list [ 1.; 2.5; 3. ] in
+  let sexp = (sexp_of_floatarray [@alloc a]) ar in
+  let str = (Sexp.to_string [@alloc a]) sexp |> String.globalize in
+  print_endline str;
+  [%expect {| (1 2.5 3) |}]
+;;]
+
 (* Assert that the module types defined by sexplib0 are equivalent to those derived by
    ppx_sexp_conv. *)
 module _ = struct
