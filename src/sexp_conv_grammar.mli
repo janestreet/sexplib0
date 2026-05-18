@@ -38,5 +38,6 @@ val array_sexp_grammar
   : ('a : any mod separable).
   'a Sexp_grammar.t -> 'a array Sexp_grammar.t
 
+val floatarray_sexp_grammar : floatarray Sexp_grammar.t
 val opaque_sexp_grammar : ('a : any). 'a Sexp_grammar.t
 val fun_sexp_grammar : 'a Sexp_grammar.t

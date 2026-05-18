@@ -36,3 +36,34 @@ let%expect_test ("make sure a stack-allocated sexp doesn't break [maybe_globaliz
   require (minor_words_stack > minor_words_static);
   [%expect {| |}]
 ;;
+
+let%expect_test ("[Sexp.to_string_mach] allocates as little as possible" [@tags "no-js"]) =
+  let sexp : Sexp.t = List [ Atom "Hello"; Atom "World" ] in
+  let%template[@alloc a @ m = (heap_global, stack_local)]
+              [@inline never]
+              [@specialise never]
+              [@local never] sexp_to_string_mach
+    ()
+    =
+    let x = (Sexp.to_string_mach [@inlined never] [@alloc a]) sexp in
+    let _ = (Sys.opaque_identity x : string @ m) in
+    ()
+  in
+  Gc.For_testing.assert_no_allocation (sexp_to_string_mach [@alloc stack]);
+  [%expect {| |}];
+  (match
+     Gc.For_testing.measure_and_log_allocation (sexp_to_string_mach [@alloc heap])
+   with
+   | #((), _, [ the_allocation_for_the_return_string ]) ->
+     require_equal (module Int) the_allocation_for_the_return_string.size_in_words 3
+   | #((), _, allocations) ->
+     print_cr
+       (List
+          [ Atom "[Sexp.to_string_mach] should heap allocate exclusively its return value"
+          ; List
+              [ Atom "allocations"
+              ; List.sexp_of_t Gc.For_testing.Allocation_log.sexp_of_t allocations
+              ]
+          ]));
+  [%expect {| |}]
+;;

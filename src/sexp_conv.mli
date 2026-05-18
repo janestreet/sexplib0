@@ -171,6 +171,13 @@ val sexp_of_array__stack
   : ('a : value_or_null mod separable).
   (local_ 'a -> local_ Sexp.t) -> local_ 'a array -> local_ Sexp.t
 
+(** [sexp_of_floatarray] converts a value of type [floatarray] to an S-expression. It is
+    identical to [sexp_of_array sexp_of_float] on the corresponding [float array]. *)
+val sexp_of_floatarray : floatarray -> Sexp.t
+
+(** As [sexp_of_floatarray], but returning a locally-allocated sexp. *)
+val sexp_of_floatarray__stack : local_ floatarray -> local_ Sexp.t
+
 (** [sexp_of_hashtbl conv_key conv_value htbl] converts the value [htbl] of type
     [('a, 'b) Hashtbl.t] to an S-expression. Uses [conv_key] to convert the hashtable keys
     of type ['a], and [conv_value] to convert hashtable values of type ['b] to
@@ -280,6 +287,11 @@ val list_of_sexp : ('a : value_or_null). (Sexp.t -> 'a) -> Sexp.t -> 'a list
 val array_of_sexp
   : ('a : value_or_null mod separable).
   (Sexp.t -> 'a) -> Sexp.t -> 'a array
+
+(** [floatarray_of_sexp sexp] converts S-expression [sexp] to a value of type
+    [floatarray]. It is identical to [array_of_sexp float_of_sexp] for the corresponding
+    [float array]. *)
+val floatarray_of_sexp : Sexp.t -> floatarray
 
 (** [hashtbl_of_sexp conv_key conv_value sexp] converts S-expression [sexp] to a value of
     type [('a, 'b) Hashtbl.t] using conversion function [conv_key], which converts an

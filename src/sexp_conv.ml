@@ -254,6 +254,33 @@ let sexp_of_array__stack
   loop (Array.length ar - 1) []
 ;;
 
+let sexp_of_floatarray ar =
+  let lst_ref = ref [] in
+  for i = Float.Array.length ar - 1 downto 0 do
+    lst_ref := sexp_of_float (Float.Array.unsafe_get ar i) :: !lst_ref
+  done;
+  List !lst_ref
+;;
+
+let sexp_of_floatarray__stack (local_ ar) = exclave_
+  let open struct
+    external unsafe_get
+      :  floatarray @ local
+      -> int
+      -> float
+      @@ portable
+      = "%floatarray_unsafe_get"
+
+    external length : floatarray @ local -> int @@ portable = "%floatarray_length"
+  end in
+  let rec loop i acc = exclave_
+    if i < 0
+    then List acc
+    else loop (i - 1) (sexp_of_float__stack (unsafe_get ar i) :: acc)
+  in
+  loop (length ar - 1) []
+;;
+
 let sexp_of_hashtbl sexp_of_key sexp_of_val htbl =
   let coll ~key:k ~data:v acc = List [ sexp_of_key k; sexp_of_val v ] :: acc in
   List (Hashtbl.fold htbl ~init:[] ~f:coll)
@@ -515,6 +542,22 @@ let array_of_sexp a__of_sexp sexp =
       | [] -> res
       | h :: t ->
         res.(i) <- a__of_sexp h;
+        loop (i + 1) t
+    in
+    loop 1 t
+  | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
+;;
+
+let floatarray_of_sexp sexp =
+  match sexp with
+  | List [] -> Float.Array.create 0
+  | List (h :: t) ->
+    let len = List.length t + 1 in
+    let res = Float.Array.make len (float_of_sexp h) in
+    let rec loop i = function
+      | [] -> res
+      | h :: t ->
+        Float.Array.unsafe_set res i (float_of_sexp h);
         loop (i + 1) t
     in
     loop 1 t
