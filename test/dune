@@ -1,7 +1,0 @@
-(library
- (name sexplib0_test)
- (libraries base expect_test_helpers_base parsexp sexplib sexplib0)
- (preprocess
-  (pps ppx_compare ppx_expect ppx_here base_quickcheck.ppx_quickcheck
-    ppx_sexp_conv ppx_sexp_value ppx_template
-    -compare-require-explicit-locality)))

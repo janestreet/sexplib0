@@ -32,6 +32,9 @@ end
 
 external globalize_float : float -> float = "caml_obj_dup"
 external bytes_length : bytes -> int = "%bytes_length"
+
+open Basement.Primitives
+
 external create_local_bytes : int -> bytes = "caml_create_bytes"
 
 external unsafe_blit_bytes
@@ -110,15 +113,19 @@ let list_map__stack f lst =
   rev (rev_map lst []) []
 ;;
 
-let sexp_of_unit () = List []
-let sexp_of_unit__stack () = List []
+let[@zero_alloc] sexp_of_unit_u () = List []
+let sexp_of_unit_u__stack = sexp_of_unit_u
+let sexp_of_unit () = (sexp_of_unit_u [@inlined]) ()
+let sexp_of_unit__stack () = (sexp_of_unit_u__stack [@inlined]) ()
 
-let[@zero_alloc] sexp_of_bool = function
+let[@zero_alloc] sexp_of_bool_u = function
   | false -> Atom "false"
   | true -> Atom "true"
 ;;
 
-let sexp_of_bool__stack = sexp_of_bool
+let sexp_of_bool_u__stack = sexp_of_bool_u
+let sexp_of_bool b = (sexp_of_bool_u [@inlined]) (unbox_bool b)
+let sexp_of_bool__stack b = (sexp_of_bool_u__stack [@inlined]) (unbox_bool b)
 let sexp_of_string str = Atom str
 let sexp_of_string__stack str = Atom str
 let sexp_of_bytes bytes = Atom (Bytes.to_string bytes)
@@ -131,12 +138,20 @@ let sexp_of_float__stack n =
   Atom ((Dynamic.get default_string_of_float) (globalize_float n))
 ;;
 
+let sexp_of_float_u n = (sexp_of_float [@inlined]) (box_float n)
+let sexp_of_float_u__stack n = (sexp_of_float__stack [@inlined]) (box_float n)
 let sexp_of_int32 n = Atom (Int32.to_string n)
 let sexp_of_int32__stack n = Atom (string_of_int32 n)
+let sexp_of_int32_u n = (sexp_of_int32 [@inlined]) (box_int32 n)
+let sexp_of_int32_u__stack n = (sexp_of_int32__stack [@inlined]) (box_int32 n)
 let sexp_of_int64 n = Atom (Int64.to_string n)
 let sexp_of_int64__stack n = Atom (string_of_int64 n)
+let sexp_of_int64_u n = (sexp_of_int64 [@inlined]) (box_int64 n)
+let sexp_of_int64_u__stack n = (sexp_of_int64__stack [@inlined]) (box_int64 n)
 let sexp_of_nativeint n = Atom (Nativeint.to_string n)
 let sexp_of_nativeint__stack n = Atom (string_of_nativeint n)
+let sexp_of_nativeint_u n = (sexp_of_nativeint [@inlined]) (box_nativeint n)
+let sexp_of_nativeint_u__stack n = (sexp_of_nativeint__stack [@inlined]) (box_nativeint n)
 let sexp_of_ref sexp_of__a rf = sexp_of__a !rf
 let sexp_of_ref__stack sexp_of__a rf = sexp_of__a !rf
 let sexp_of_lazy_t sexp_of__a lv = sexp_of__a (Lazy.force lv)
@@ -351,12 +366,32 @@ let unit_of_sexp sexp =
   | Atom _ | List _ -> of_sexp_error "unit_of_sexp: empty list needed" sexp
 ;;
 
+let unit_u_of_sexp sexp =
+  match sexp with
+  | List [] -> ()
+  | Atom _ | List _ ->
+    (match of_sexp_error "unit_u_of_sexp: empty list needed" sexp with
+     | (_ : nothing) -> .)
+;;
+
 let bool_of_sexp sexp =
   match sexp with
   | Atom ("true" | "True") -> true
   | Atom ("false" | "False") -> false
   | Atom _ -> of_sexp_error "bool_of_sexp: unknown string" sexp
   | List _ -> of_sexp_error "bool_of_sexp: atom needed" sexp
+;;
+
+let bool_u_of_sexp sexp =
+  match sexp with
+  | Atom ("true" | "True") -> true
+  | Atom ("false" | "False") -> false
+  | Atom _ ->
+    (match of_sexp_error "bool_of_sexp: unknown string" sexp with
+     | (_ : nothing) -> .)
+  | List _ ->
+    (match of_sexp_error "bool_of_sexp: atom needed" sexp with
+     | (_ : nothing) -> .)
 ;;
 
 let string_of_sexp sexp =
@@ -380,6 +415,8 @@ let char_of_sexp sexp =
   | List _ -> of_sexp_error "char_of_sexp: atom needed" sexp
 ;;
 
+let char_u_of_sexp sexp = unbox_char ((char_of_sexp [@inlined]) sexp)
+
 let int_of_sexp sexp =
   match sexp with
   | Atom str ->
@@ -396,6 +433,8 @@ let float_of_sexp sexp =
   | List _ -> of_sexp_error "float_of_sexp: atom needed" sexp
 ;;
 
+let float_u_of_sexp sexp = unbox_float ((float_of_sexp [@inlined]) sexp)
+
 let int32_of_sexp sexp =
   match sexp with
   | Atom str ->
@@ -403,6 +442,8 @@ let int32_of_sexp sexp =
      | exc -> of_sexp_error ("int32_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "int32_of_sexp: atom needed" sexp
 ;;
+
+let int32_u_of_sexp sexp = unbox_int32 ((int32_of_sexp [@inlined]) sexp)
 
 let int64_of_sexp sexp =
   match sexp with
@@ -412,6 +453,8 @@ let int64_of_sexp sexp =
   | List _ -> of_sexp_error "int64_of_sexp: atom needed" sexp
 ;;
 
+let int64_u_of_sexp sexp = unbox_int64 ((int64_of_sexp [@inlined]) sexp)
+
 let nativeint_of_sexp sexp =
   match sexp with
   | Atom str ->
@@ -420,6 +463,7 @@ let nativeint_of_sexp sexp =
   | List _ -> of_sexp_error "nativeint_of_sexp: atom needed" sexp
 ;;
 
+let nativeint_u_of_sexp sexp = unbox_nativeint ((nativeint_of_sexp [@inlined]) sexp)
 let ref_of_sexp a__of_sexp sexp = ref (a__of_sexp sexp)
 let lazy_t_of_sexp a__of_sexp sexp = Lazy.from_val (a__of_sexp sexp)
 
@@ -965,3 +1009,6 @@ let[@inline always] sexp_of_char__stack (char : char) =
   then sexp_of_char_statically_allocated char
   else fallback_sexp_of_char__stack char
 ;;
+
+let sexp_of_char_u char = (sexp_of_char [@inlined]) (box_char char)
+let sexp_of_char_u__stack char = (sexp_of_char__stack [@inlined]) (box_char char)

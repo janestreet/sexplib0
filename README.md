@@ -1,5 +1,4 @@
-"Sexplib0 - a low-dep version of Sexplib"
-=========================================
+# Sexplib0 - a low-dep version of Sexplib
 
 `sexplib0` is a lightweight portion of `sexplib`, for situations where a
 dependency on `sexplib` is problematic.
