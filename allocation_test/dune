@@ -1,5 +1,0 @@
-(library
- (name sexplib0_allocation_test)
- (libraries core expect_test_helpers_base sexplib0)
- (preprocess
-  (pps ppx_expect ppx_template)))
